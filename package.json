@@ -1,0 +1,26 @@
+{
+  "name": "miner-manager",
+  "version": "1.0.0",
+  "description": "Node utility that uses Claymore miner, nvidia-smi and nvidia-settings to fune tune overclock settings for multiple GPUs on a Linux system",
+  "main": "index.js",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "typescript": "^2.6.1"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "prestart": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Roaders/miner-manager.git"
+  },
+  "author": "Giles Roadnight",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Roaders/miner-manager/issues"
+  },
+  "homepage": "https://github.com/Roaders/miner-manager#readme"
+}
