@@ -1,1 +1,4 @@
-console.log(`Hello World`);
+
+import * as http from "http";
+
+http.createServer().listen();

@@ -13,6 +13,20 @@
             "console": "internalConsole",
             "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": "buildTypescript"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Mock SMI uuid",
+            "program": "${workspaceFolder}/dist/mocks/mockNvidiaSmi.js",
+            "args": [
+                "--query-gpu=index,uuid",
+                "--format=csv,noheader"
+            ],
+            "sourceMaps": true,
+            "console": "internalConsole",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "buildTypescript"
         }
     ]
 }
