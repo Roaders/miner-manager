@@ -23,6 +23,6 @@ export class MinerSettings{
     }
 
     public get startPort(): number{
-        return 3330;
+        return 3430;
     }
 }

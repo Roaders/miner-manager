@@ -4,6 +4,7 @@
   "description": "Node utility that uses Claymore miner, nvidia-smi and nvidia-settings to fune tune overclock settings for multiple GPUs on a Linux system",
   "main": "index.js",
   "dependencies": {
+    "@types/command-line-args": "^4.0.2",
     "@types/node": "^8.0.53",
     "command-line-args": "^4.0.7",
     "command-line-usage": "^4.0.1",
