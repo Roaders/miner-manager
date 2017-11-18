@@ -1,6 +1,4 @@
 
-import * as http from "http";
-
 interface ICommandArgument {
     name: string;
     value: string[]
