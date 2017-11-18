@@ -1,4 +1,9 @@
 
-import * as http from "http";
+import {INvidiaQuery, makeQuery} from "./utils/nvidia-smi";
 
-http.createServer().listen();
+makeQuery(["index","uuid"])
+    .toArray()
+    .subscribe(
+        ids => console.log(`${ids.length} cards found. Launching miners...`),
+        error => console.log(`Error: ${error}`)
+    );

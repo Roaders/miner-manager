@@ -6,7 +6,8 @@
   "dependencies": {
     "@types/node": "^8.0.53",
     "command-line-args": "^4.0.7",
-    "command-line-usage": "^4.0.1"
+    "command-line-usage": "^4.0.1",
+    "rxjs": "^5.5.2"
   },
   "devDependencies": {
     "typescript": "^2.6.1"
