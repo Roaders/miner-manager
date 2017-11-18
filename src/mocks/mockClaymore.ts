@@ -1,5 +1,6 @@
 
 import {Observable} from "rxjs";
+import * as http from "http";
 
 const messages = [
     "Setting DAG epoch #152...",
@@ -14,3 +15,5 @@ console.log(`CUDA initializing...`);
 Observable.from(messages)
     .concatMap(message => Observable.of(message).delay((Math.random() * 500) + 100))
     .subscribe(message => console.log(message));
+
+http.createServer().listen();

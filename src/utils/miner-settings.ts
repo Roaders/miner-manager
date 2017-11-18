@@ -1,6 +1,4 @@
 
-import {Observable} from "rxjs";
-
 type settings = "nvidia-smi-path" | "miner-path";
 
 export interface IApplicationLaunchParams{
@@ -10,12 +8,21 @@ export interface IApplicationLaunchParams{
 
 export class MinerSettings{
     
-    public get nividiSmiLaunchParams(): Observable<IApplicationLaunchParams>{
-        const params = {
+    public get nividiSmiLaunchParams(): IApplicationLaunchParams{
+        return {
             path: "node",
             params: [ "dist/mocks/mockNvidiaSmi.js" ]
         }
+    }
+    
+    public get claymoreLaunchParams(): IApplicationLaunchParams{
+        return {
+            path: "node",
+            params: [ "dist/mocks/mockClaymore.js" ]
+        }
+    }
 
-        return Observable.of(params);
+    public get startPort(): number{
+        return 3330;
     }
 }
