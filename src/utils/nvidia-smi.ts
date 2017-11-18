@@ -1,21 +1,26 @@
 
+import {IApplicationLaunchParams} from "./miner-settings";
 import {launchChild} from "./rx-child-process";
 import {Observable} from "rxjs";
 import {spawn} from "child_process";
+import {Maybe} from "maybe-monad";
 
 export interface INvidiaQuery{
     index?: number;
     uuid?: string;
 }
 
-export function makeQuery(queryParams: (keyof INvidiaQuery)[]): Observable<INvidiaQuery>{
+export function makeQuery(smiParams: IApplicationLaunchParams, queryParams: (keyof INvidiaQuery)[]): Observable<INvidiaQuery>{
     if(queryParams.length === 0){
         return Observable.empty();
     }
-    const existingParams: string[] = ["dist/mocks/mockNvidiaSmi.js"];
-    const processParams: string[] = existingParams.concat("--format=csv,noheader", `--query-gpu=${queryParams.join()}`);
 
-    return launchChild(() => spawn('node', processParams))
+    const processParams: string[] = Maybe.nullToMaybe(smiParams.params)
+        .orElse([])
+        .map(params => params.concat("--format=csv,noheader", `--query-gpu=${queryParams.join()}`))
+        .defaultTo([]);
+
+    return launchChild(() => spawn(smiParams.path, processParams))
         .map(line => parseQueryResult(line, queryParams))
         .filter(result => result != null)
         .map<INvidiaQuery | undefined,INvidiaQuery>(result => result!);
