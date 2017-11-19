@@ -1,4 +1,6 @@
 
+import * as path from "path";
+
 type settings = "nvidia-smi-path" | "miner-path";
 
 export interface IApplicationLaunchParams{
@@ -24,5 +26,9 @@ export class MinerSettings{
 
     public get startPort(): number{
         return 3430;
+    }
+
+    public get logFolder(): string{
+        return path.join(process.cwd(), "log");
     }
 }

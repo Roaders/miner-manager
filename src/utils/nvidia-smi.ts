@@ -15,7 +15,7 @@ export function makeQuery(smiParams: IApplicationLaunchParams, queryParams?: (ke
     const query = Maybe.nullToMaybe(queryParams)
         .orElse([])
         .map(params => { params.unshift("index"); return params; })
-        .map(params => { params.unshift("index"); return params; })
+        .map(params => { params.unshift("uuid"); return params; })
         .defaultTo<(keyof INvidiaQuery)[]>([]);
 
     const processParams: string[] = Maybe.nullToMaybe(smiParams.params)

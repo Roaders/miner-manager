@@ -4,8 +4,14 @@ import { MinerSettings } from "./utils/miner-settings";
 import { Observable } from "rxjs/Observable";
 import { launchChild } from "./utils/rx-child-process";
 import { ClaymoreMiner } from "./miner/ClaymoreMiner";
+import * as fs from "fs";
 
 const settings = new MinerSettings();
+
+try{
+    fs.mkdirSync(settings.logFolder);
+}
+catch(e){}
 
 function launchMiner(card: INvidiaQuery): Observable<string>{
     return new ClaymoreMiner( card, settings.startPort + card.index, settings ).launch();
