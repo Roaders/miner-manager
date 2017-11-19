@@ -1,6 +1,6 @@
 
 import { IApplicationLaunchParams } from "./miner-settings";
-import { launchChild } from "./rx-child-process";
+import { launchChild, IChildDataEvent, childEvent } from "./rx-child-process";
 import { Observable } from "rxjs";
 import { spawn } from "child_process";
 import { Maybe } from "maybe-monad";
@@ -24,13 +24,15 @@ export function makeQuery(smiParams: IApplicationLaunchParams, queryParams?: (ke
         .defaultTo([]);
 
     return launchChild(() => spawn(smiParams.path, processParams))
-        .map(line => parseQueryResult(line, query))
+        .filter(message => message.event === "data")
+        .map<childEvent,IChildDataEvent>(m => <any>m)
+        .map(message => parseQueryResult(message, query))
         .filter(result => result != null)
         .map<INvidiaQuery | undefined, INvidiaQuery>(result => result!);
 }
 
-function parseQueryResult(input: string, queryParams: (keyof INvidiaQuery)[]): INvidiaQuery | undefined {
-    const values = input.split(", ");
+function parseQueryResult(input: IChildDataEvent, queryParams: (keyof INvidiaQuery)[]): INvidiaQuery | undefined {
+    const values = input.data.split(", ");
 
     if (values.length !== queryParams.length) {
         console.warn(`different number of results (${input}) and params (${queryParams}) from nvidi-smi, not returning a result`);
