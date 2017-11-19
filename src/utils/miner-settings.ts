@@ -27,7 +27,7 @@ export class MinerSettings{
         this._logFolder = logFolderMaybe.value;
         this._claymorePath = claymorePathMaybe.value;
 
-        this._nvidiaSmiPath = Maybe.nullToMaybe(commandLineValues.nvidiaSmiPath).defaultTo("node");
+        this._nvidiaSmiPath = Maybe.nullToMaybe(commandLineValues.nvidiaSmiPath).defaultTo("nvidia-smi");
         this._nvidiaSmiParams = Maybe.nullToMaybe(commandLineValues.nvidiaSmiParams).defaultTo(undefined);
         this._claymoreParams = Maybe.nullToMaybe(commandLineValues.claymoreParams).defaultTo(undefined);
     }

@@ -25,10 +25,16 @@ export class ClaymoreMiner {
 
     public launch(): Observable<string> {
         const launchSettings = this._settings.claymoreLaunchParams;
+        const logPath = path.join(this._settings.logFolder, `Clay_GPU${this._card.index}_${Date.now()}.log`);
 
         const minerParams = Maybe.nullToMaybe(launchSettings.params)
             .orElse([])
-            .map(params => { params.push(`-mport ${this._port}`); return params; })
+            .map(params => { params.push(`-mport`); return params; })
+            .map(params => { params.push(this._port.toString()); return params; })
+            .map(params => { params.push(`-logfile`); return params; })
+            .map(params => { params.push(logPath); return params; })
+            .map(params => { params.push(`-di`); return params; })
+            .map(params => { params.push(this._card.index.toString()); return params; })
             .defaultTo(undefined);
 
         return Observable.defer(() => Observable.of(`Claymore miner for index: ${this._card.index}, uuid: ${this._card.uuid} and port: ${this._port}`))
