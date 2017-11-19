@@ -7,8 +7,16 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
+            "name": "Launch Mocked Manager",
             "program": "${workspaceFolder}/dist/index.js",
+            "args": [
+                "--startPort=2340",
+                "--logFolder=log",
+                "--nvidiaSmiPath=node",
+                "--nvidiaSmiParams=dist/mocks/mockNvidiaSmi.js",
+                "--claymorePath=node",
+                "--claymoreParams=dist/mocks/mockClaymore.js"
+            ],
             "sourceMaps": true,
             "console": "internalConsole",
             "internalConsoleOptions": "openOnSessionStart",

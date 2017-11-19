@@ -8,6 +8,11 @@ import * as fs from "fs";
 
 const settings = new MinerSettings();
 
+if(!settings || !settings.allSettingsDefined){
+    console.error(`settings not defined. Refer to help (pass -h)`);
+    process.exit();
+}
+
 try{
     fs.mkdirSync(settings.logFolder);
 }
