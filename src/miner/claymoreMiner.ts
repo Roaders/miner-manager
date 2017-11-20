@@ -43,9 +43,9 @@ export class ClaymoreMiner {
 
         return Observable.defer(() => Observable.of(`Claymore miner for index: ${this._card.index}, uuid: ${this._card.uuid} and port: ${this._port}`))
             .merge(launchChild(() => spawn(launchSettings.path, minerParams))
+                .do(message => this.storeMessages(message))
                 .map(message => this.handleMessages(message))
                 .filter(message => message != null)
-                .do(message => this.storeMessages(message!))
                 .map(message => `Card ${this._card.index}: ${message} (${this._card.uuid})`));
     }
 
@@ -61,7 +61,7 @@ export class ClaymoreMiner {
 
         switch (message.event) {
             case "data":
-                if (/Setting DAG epoch \#\d+ for GPU0 done/.test(message.data)) {
+                if (/Setting DAG epoch \#\d+ for GPU\d done/.test(message.data)) {
                     return "DAG epoch creation complete, mining started"
                 }
                 break;
@@ -73,8 +73,19 @@ export class ClaymoreMiner {
         return null;
     }
 
-    private storeMessages(message: string) {
+    private storeMessages(message: childEvent) {
+        switch (message.event) {
+            case "data":
+                this._logger.info(message.data, [message]);
+                break;
 
-                this._logger.info(message);
-      }
+            case "error":
+                this._logger.error(message.error.toString(), [message]);
+                break;
+
+            default:
+                this._logger.info(`${message.source} - ${message.event}`, [message]);
+        }
+    }
+
 }

@@ -3,13 +3,13 @@ import { INvidiaQuery, makeQuery } from "./utils/nvidia-smi";
 import { MinerSettings } from "./utils/miner-settings";
 import { Observable } from "rxjs/Observable";
 import { launchChild } from "./utils/rx-child-process";
-import { ClaymoreMiner } from "./miner/ClaymoreMiner";
+import { ClaymoreMiner } from "./miner/claymoreMiner";
 import * as fs from "fs";
 
 const settings = new MinerSettings();
 
 if(!settings || !settings.allSettingsDefined){
-    console.error(`settings not defined. Refer to help (pass -h)`);
+    console.error(`settings not defined. Refer to help (view help with -h)`);
     process.exit();
 }
 
