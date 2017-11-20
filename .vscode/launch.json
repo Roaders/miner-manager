@@ -11,11 +11,28 @@
             "program": "${workspaceFolder}/dist/index.js",
             "args": [
                 "--startPort=2340",
-                "--logFolder=log",
+                "--logFolder=logMock",
                 "--nvidiaSmiPath=node",
                 "--nvidiaSmiParams=dist/mocks/mockNvidiaSmi.js",
                 "--claymorePath=node",
                 "--claymoreParams=dist/mocks/mockClaymore.js"
+            ],
+            "sourceMaps": true,
+            "console": "internalConsole",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "buildTypescript"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Manager Test",
+            "program": "${workspaceFolder}/dist/index.js",
+            "args": [
+                "--startPort=2340",
+                "--logFolder=log",
+                "--nvidiaSmiPath=node",
+                "--nvidiaSmiParams=dist/mocks/mockNvidiaSmi.js",
+                "--claymorePath=C:\\Users\\Giles\\Desktop\\Claymore.v10.0\\EthDcrMiner64.exe"
             ],
             "sourceMaps": true,
             "console": "internalConsole",
