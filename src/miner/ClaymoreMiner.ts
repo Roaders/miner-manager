@@ -34,15 +34,27 @@ export class ClaymoreMiner {
             .map(params => { params.push(`-logfile`); return params; })
             .map(params => { params.push(logPath); return params; })
             .map(params => { params.push(`-di`); return params; })
-            .map(params => { params.push(this._card.index.toString()); return params; })
+            .map(params => { params.push(this.getCardIdentifier(this._card.index)); return params; })
+            .map(params => { params.push(`-erate`); return params; })
+            .map(params => { params.push("0"); return params; })
+            .map(params => { params.push(`-r`); return params; })
+            .map(params => { params.push("1"); return params; })
             .defaultTo(undefined);
 
         return Observable.defer(() => Observable.of(`Claymore miner for index: ${this._card.index}, uuid: ${this._card.uuid} and port: ${this._port}`))
             .merge(launchChild(() => spawn(launchSettings.path, minerParams))
-                .do(message => this.storeMessages(message))
                 .map(message => this.handleMessages(message))
                 .filter(message => message != null)
-                .map(message => `Card ${this._card.index}: ${message}`));
+                .do(message => this.storeMessages(message!))
+                .map(message => `Card ${this._card.index}: ${message} (${this._card.uuid})`));
+    }
+
+    private getCardIdentifier(index: number): string {
+        if (index > 9) {
+            return String.fromCharCode(97 + (index - 10));
+        } else {
+            return index.toString();
+        }
     }
 
     private handleMessages(message: childEvent): string | null {
@@ -53,24 +65,16 @@ export class ClaymoreMiner {
                     return "DAG epoch creation complete, mining started"
                 }
                 break;
+
+            case "exit":
+                return "Child process exit";
         }
 
         return null;
     }
 
-    private storeMessages(message: childEvent) {
+    private storeMessages(message: string) {
 
-        switch (message.event) {
-            case "data":
-                this._logger.info(message.data, [message]);
-                break;
-
-            case "error":
-                this._logger.error(message.error.toString(), [message]);
-                break;
-
-            default:
-                this._logger.info( `${message.source} - ${message.event}`, [message]);
-        }
-    }
+                this._logger.info(message);
+      }
 }

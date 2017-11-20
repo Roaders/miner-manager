@@ -28,6 +28,6 @@ makeQuery(settings.nividiSmiLaunchParams)
     .flatMap(ids => Observable.from(ids))
     .flatMap(id => launchMiner(id))
     .subscribe(
-        undefined,
+        message => console.log(message),
         error => console.log(`Error: ${error}`)
         );

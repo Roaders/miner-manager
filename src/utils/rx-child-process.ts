@@ -4,12 +4,12 @@ import { Observable, Subject } from "rxjs";
 import { Readable } from "stream";
 
 
-export type sourceType = "stdout" | "stderr";
+export type sourceType = "stdout" | "stderr" | "childprocess";
 export type eventName = "close" | "data" | "end" | "readable" | "error";
 
 export interface IChildEvent {
   source: sourceType;
-  event: "close" | "end" | "readable";
+  event: "close" | "end" | "readable" | "exit";
 }
 
 export interface IChildDataEvent {
@@ -30,17 +30,20 @@ export function launchChild(launchCommand: () => ChildProcess): Observable<child
 
   return Observable.defer(() => {
     const exitSubject = new Subject();
+    const childStream = new Subject<IChildEvent>();
     const childProcess = launchCommand();
 
     const stoutStream = setupEventHandling(childProcess.stdout, "stdout");
     const sterrStream = setupEventHandling(childProcess.stderr, "stderr");
 
     childProcess.on('exit', (code) => {
+      childStream.next({source: "childprocess", event: "exit"});
       exitSubject.next();
       exitSubject.complete();
     });
 
-    return stoutStream
+    return childStream
+      .merge(stoutStream)
       .merge(sterrStream)
       .takeUntil(exitSubject);
   });
