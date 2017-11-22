@@ -96,7 +96,7 @@ export class ClaymoreMiner {
                 break;
 
             case "exit":
-                this._isRunning = true;
+                this._isRunning = false;
                 return this.status;
         }
 

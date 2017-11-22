@@ -27,6 +27,7 @@ makeQuery(settings.nividiSmiLaunchParams)
     .do(ids => console.log(`${ids.length} cards found. Launching miners...`))
     .flatMap(ids => Observable.from(ids))
     .map(id => launchMiner(id))
+    .toArray()
     .flatMap(minerStreams => Observable.combineLatest(minerStreams))
     .subscribe(
         statuses => displayMiners(statuses),
@@ -34,7 +35,7 @@ makeQuery(settings.nividiSmiLaunchParams)
         );
 
 function displayMiners(statuses: IMinerStatus[]){
-    console.log(`statuses: `);
+    console.log(`statuses:`);
 
     statuses.forEach(status => {
         console.log(`card ${status.card.index} uptime: ${status.upTime} isRunning: ${status.isRunning}`)
