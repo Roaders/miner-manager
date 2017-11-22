@@ -1,6 +1,7 @@
 
 import { Observable } from "rxjs";
 import * as http from "http";
+import { timeout } from "rxjs/operator/timeout";
 
 const messages = [
     "Setting DAG epoch #152...",
@@ -35,3 +36,5 @@ http.createServer((request, response) => {
     response.writeHead(200, {'Content-Type': 'text/plain'}); 
     response.end(`Hello World port ${port}\n`);
 }).listen(port);
+
+setTimeout(() => process.exit(), (Math.random() * 60 * 1000) + 500);
