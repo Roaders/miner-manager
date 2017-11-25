@@ -9,7 +9,7 @@
     "@types/winston": "^2.3.7",
     "command-line-args": "^4.0.7",
     "command-line-usage": "^4.0.1",
-    "maybe-monad": "0.0.2",
+    "maybe-monad": "1.0.2",
     "rxjs": "^5.5.2",
     "winston": "^2.3.1"
   },
