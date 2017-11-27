@@ -21,20 +21,26 @@ try {
 }
 catch (e) { }
 
-function launchMiner(card: INvidiaQuery): Observable<IMinerStatus> {
-    return new ClaymoreMiner(card, settings.startPort + card.index, settings).launch();
+function createMiner(card: INvidiaQuery): ClaymoreMiner {
+    return new ClaymoreMiner(card, settings.startPort + card.index, settings);
 }
 
 makeQuery(settings.nividiSmiLaunchParams)
     .toArray()
-    .flatMap(ids => Observable.from(ids))
-    .map(id => launchMiner(id))
-    .toArray()
-    .flatMap(minerStreams => Observable.combineLatest(minerStreams))
+    .flatMap(createMiners)
     .subscribe(
-    statuses => displayMiners(statuses),
-    error => console.log(`Error: ${error}`)
-    );
+        statuses => displayMiners(statuses),
+        error => console.log(`Error: ${error}`)
+        );
+
+function createMiners(ids: INvidiaQuery[]): Observable<IMinerStatus[]> {
+    const miners = ids.map(createMiner);
+
+    const minerUpdates = Observable.combineLatest(miners.map(miner => miner.launch()))
+
+
+    return minerUpdates;
+}
 
 function displayMiners(statuses: IMinerStatus[]) {
     clear();
