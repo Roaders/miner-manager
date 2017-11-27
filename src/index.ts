@@ -4,40 +4,48 @@ import { MinerSettings } from "./utils/miner-settings";
 import { Observable } from "rxjs/Observable";
 import { launchChild } from "./utils/rx-child-process";
 import { ClaymoreMiner, IMinerStatus } from "./miner/claymoreMiner";
+import { HorizontalTable } from "cli-table2";
+import * as Table from "cli-table2";
 import * as fs from "fs";
+const clear = require("clear");
 
 const settings = new MinerSettings();
 
-if(!settings || !settings.allSettingsDefined){
+if (!settings || !settings.allSettingsDefined) {
     console.error(`settings not defined. Refer to help (view help with -h)`);
     process.exit();
 }
 
-try{
+try {
     fs.mkdirSync(settings.logFolder);
 }
-catch(e){}
+catch (e) { }
 
-function launchMiner(card: INvidiaQuery): Observable<IMinerStatus>{
-    return new ClaymoreMiner( card, settings.startPort + card.index, settings ).launch();
+function launchMiner(card: INvidiaQuery): Observable<IMinerStatus> {
+    return new ClaymoreMiner(card, settings.startPort + card.index, settings).launch();
 }
 
 makeQuery(settings.nividiSmiLaunchParams)
     .toArray()
-    .do(ids => console.log(`${ids.length} cards found. Launching miners...`))
     .flatMap(ids => Observable.from(ids))
     .map(id => launchMiner(id))
     .toArray()
     .flatMap(minerStreams => Observable.combineLatest(minerStreams))
     .subscribe(
-        statuses => displayMiners(statuses),
-        error => console.log(`Error: ${error}`)
-        );
+    statuses => displayMiners(statuses),
+    error => console.log(`Error: ${error}`)
+    );
 
-function displayMiners(statuses: IMinerStatus[]){
-    console.log(`statuses:`);
+function displayMiners(statuses: IMinerStatus[]) {
+    clear();
 
-    statuses.forEach(status => {
-        console.log(`card ${status.card.index} uptime: ${status.upTime} isRunning: ${status.isRunning}`)
-    })
+    console.log(`${statuses.length} cards found. Launching miners...`);
+
+    const cardTable = new Table({
+        head: ["Id", "Status", "Uptime"]
+    }) as HorizontalTable;
+
+    statuses.forEach(status => cardTable.push([status.card.index, status.isRunning ? "Up" : "Down", status.upTime.toString()]));
+
+    console.log(cardTable.toString());
 }

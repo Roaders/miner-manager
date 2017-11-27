@@ -18,7 +18,7 @@
                 "--claymoreParams=dist/mocks/mockClaymore.js"
             ],
             "sourceMaps": true,
-            "console": "internalConsole",
+            "console": "externalTerminal",
             "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": "buildTypescript"
         },

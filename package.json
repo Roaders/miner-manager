@@ -4,9 +4,10 @@
   "description": "Node utility that uses Claymore miner, nvidia-smi and nvidia-settings to fune tune overclock settings for multiple GPUs on a Linux system",
   "main": "index.js",
   "dependencies": {
-    "@types/command-line-args": "^4.0.2",
-    "@types/node": "^8.0.53",
-    "@types/winston": "^2.3.7",
+    "clear": "0.0.1",
+    "cli-color": "^1.2.0",
+    "cli-table2": "^0.2.0",
+    "clui": "^0.3.6",
     "command-line-args": "^4.0.7",
     "command-line-usage": "^4.0.1",
     "maybe-monad": "0.0.2",
@@ -14,12 +15,18 @@
     "winston": "^2.3.1"
   },
   "devDependencies": {
+    "@types/cli-table2": "^0.2.1",
+    "@types/command-line-args": "^4.0.2",
+    "@types/node": "^8.0.53",
+    "@types/winston": "^2.3.7",
     "typescript": "^2.6.1"
   },
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js --startPort=2340 --logFolder=log --claymorePath=/usr/local/claymore100/ethdcrminer64",
-    "prestart": "npm run build"
+    "start": "node dist/index.js --startPort=2340 --logFolder=log  --claymorePath=/usr/local/claymore100/ethdcrminer64",
+    "mock": "node dist/index.js --startPort=2340 --logFolder=logMock --nvidiaSmiPath=node --nvidiaSmiParams=dist/mocks/mockNvidiaSmi.js --claymorePath=node --claymoreParams=dist/mocks/mockClaymore.js",
+    "prestart": "npm run build",
+    "premock": "npm run build"
   },
   "repository": {
     "type": "git",
