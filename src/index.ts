@@ -5,6 +5,7 @@ import { Observable } from "rxjs/Observable";
 import { launchChild } from "./utils/rx-child-process";
 import { ClaymoreMiner, IMinerStatus } from "./miner/claymoreMiner";
 import { HorizontalTable } from "cli-table2";
+import * as moment from "moment-duration-format";
 import * as Table from "cli-table2";
 import * as fs from "fs";
 const clear = require("clear");
@@ -36,10 +37,20 @@ makeQuery(settings.nividiSmiLaunchParams)
 function createMiners(ids: INvidiaQuery[]): Observable<IMinerStatus[]> {
     const miners = ids.map(createMiner);
 
-    const minerUpdates = Observable.combineLatest(miners.map(miner => miner.launch()))
+    const intervalStream = Observable.interval(1000)
 
+    const minerUpdates = Observable.combineLatest(miners.map(miner => createMinerStream(miner, intervalStream)))
 
     return minerUpdates;
+}
+
+function createMinerStream(miner: ClaymoreMiner, interval: Observable<number>): Observable<IMinerStatus>{
+    const minerUpdates = miner.launch();
+
+    const intervalUpdates = interval.map(() => miner.status)
+        .takeWhile(() => miner.status.isRunning);
+
+    return minerUpdates.merge(intervalUpdates);
 }
 
 function displayMiners(statuses: IMinerStatus[]) {
@@ -51,7 +62,15 @@ function displayMiners(statuses: IMinerStatus[]) {
         head: ["Id", "Status", "Uptime"]
     }) as HorizontalTable;
 
-    statuses.forEach(status => cardTable.push([status.card.index, status.isRunning ? "Up" : "Down", status.upTime.toString()]));
+    statuses.forEach(status => cardTable.push(buildColumns(status)));
 
     console.log(cardTable.toString());
+}
+
+function buildColumns(status: IMinerStatus): string[]{
+    return [
+        status.card.index.toString(),
+        status.isRunning ? "Up" : "Down",
+        Math.floor(status.upTime / 1000).toString()
+    ];
 }
