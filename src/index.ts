@@ -5,10 +5,16 @@ import { Observable } from "rxjs/Observable";
 import { launchChild } from "./utils/rx-child-process";
 import { ClaymoreMiner, IMinerStatus } from "./miner/claymoreMiner";
 import { HorizontalTable } from "cli-table2";
+
 import * as moment from "moment-duration-format";
 import * as Table from "cli-table2";
 import * as fs from "fs";
+
 const clear = require("clear");
+
+import formatDuration from "format-duration";
+
+const formatted = formatDuration(123456);
 
 const settings = new MinerSettings();
 
@@ -71,6 +77,6 @@ function buildColumns(status: IMinerStatus): string[]{
     return [
         status.card.index.toString(),
         status.isRunning ? "Up" : "Down",
-        Math.floor(status.upTime / 1000).toString()
+        formatDuration(status.upTime)
     ];
 }
