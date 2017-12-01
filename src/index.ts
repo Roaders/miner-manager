@@ -10,11 +10,9 @@ import * as moment from "moment-duration-format";
 import * as Table from "cli-table2";
 import * as fs from "fs";
 
-const clear = require("clear");
-
 import formatDuration = require("format-duration");
 
-const formatted = formatDuration(123456);
+const clear = require("clear");
 
 const settings = new MinerSettings();
 
