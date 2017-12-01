@@ -29,8 +29,8 @@
     "build": "tsc",
     "mock": "node dist/index.js --startPort=2340 --logFolder=logMock --nvidiaSmiPath=node --nvidiaSmiParams=dist/mocks/mockNvidiaSmi.js --claymorePath=node --claymoreParams=dist/mocks/mockClaymore.js",
     "prestart": "npm run build",
-    "premock": "npm run build"
-    "start": "node dist/index.js --startPort=3331 --logFolder=log --claymorePath=/usr/local/claymore100/ethdcrminer64",
+    "premock": "npm run build",
+    "start": "node dist/index.js --startPort=3331 --logFolder=log --claymorePath=/usr/local/claymore100/ethdcrminer64"
   },
   "repository": {
     "type": "git",

@@ -30,6 +30,8 @@ function createMiner(card: INvidiaQuery): ClaymoreMiner {
     return new ClaymoreMiner(card, settings.startPort + card.index, settings);
 }
 
+clear();
+
 makeQuery(settings.nividiSmiLaunchParams)
     .toArray()
     .flatMap(createMiners)
@@ -58,7 +60,7 @@ function createMinerStream(miner: ClaymoreMiner, interval: Observable<number>): 
 }
 
 function displayMiners(statuses: IMinerStatus[]) {
-    clear();
+    clear(false);
 
     console.log(`${statuses.length} cards found. Launching miners...`);
 
