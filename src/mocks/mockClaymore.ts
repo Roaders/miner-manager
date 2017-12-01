@@ -23,7 +23,7 @@ console.log(`launching server: ${port}`);
 //     response.end(`Hello World port ${port}\n`);
 // }).listen(port);
 
-const dieTime = (Math.random() * 8500) + 1500;
+const dieTime = (Math.random() * 20000) + 1500;
 
 console.log(`dieTime: ${dieTime}`);
 

@@ -5,12 +5,15 @@ import { Observable } from "rxjs/Observable";
 import { launchChild } from "./utils/rx-child-process";
 import { ClaymoreMiner, IMinerStatus } from "./miner/claymoreMiner";
 import { HorizontalTable } from "cli-table2";
+import { Maybe } from "maybe-monad";
 
 import * as moment from "moment-duration-format";
 import * as Table from "cli-table2";
 import * as fs from "fs";
 
 import formatDuration = require("format-duration");
+import { stat } from "fs";
+import { start } from "repl";
 
 const clear = require("clear");
 
@@ -30,15 +33,35 @@ function createMiner(card: INvidiaQuery): ClaymoreMiner {
     return new ClaymoreMiner(card, settings.startPort + card.index, settings);
 }
 
-clear();
+const nvidiaSmiStream = Observable.interval(60000)
+    .startWith(0)
+    .flatMap(() => makeQuery(settings.nividiSmiLaunchParams, ["power_draw"]).toArray())
+    .do(() => clear())
+    .do(() => console.log(`NEW NVIDIA`))
+    .share();
 
-makeQuery(settings.nividiSmiLaunchParams)
-    .toArray()
-    .flatMap(createMiners)
+const minerUpdates = nvidiaSmiStream
+    .take(1)
+    .flatMap(createMiners);
+
+minerUpdates.combineLatest(nvidiaSmiStream.takeUntil(minerUpdates.takeLast(1)))
+    .map(([minerStatuses, nvidiaQuery]) => updateStatuses(minerStatuses, nvidiaQuery))
     .subscribe(
-        statuses => displayMiners(statuses),
-        error => console.log(`Error: ${error}`)
-        );
+    statuses => displayMiners(statuses),
+    error => console.log(`Error: ${error}`)
+    );
+
+function updateStatuses(minerStatuses: IMinerStatus[], cards: INvidiaQuery[]) {
+    minerStatuses.forEach(status => {
+        const queryResult = cards.filter(card => card.uuid === status.card.uuid);
+
+        if(queryResult.length === 1){
+            status.card = queryResult[0];
+        }
+    })
+
+    return minerStatuses;
+}
 
 function createMiners(ids: INvidiaQuery[]): Observable<IMinerStatus[]> {
     const miners = ids.map(createMiner);
@@ -50,7 +73,7 @@ function createMiners(ids: INvidiaQuery[]): Observable<IMinerStatus[]> {
     return minerUpdates;
 }
 
-function createMinerStream(miner: ClaymoreMiner, interval: Observable<number>): Observable<IMinerStatus>{
+function createMinerStream(miner: ClaymoreMiner, interval: Observable<number>): Observable<IMinerStatus> {
     const minerUpdates = miner.launch();
 
     const intervalUpdates = interval.map(() => miner.status)
@@ -65,7 +88,7 @@ function displayMiners(statuses: IMinerStatus[]) {
     console.log(`${statuses.length} cards found. Launching miners...`);
 
     const cardTable = new Table({
-        head: ["Id", "Status", "Uptime"]
+        head: ["Id", "Status", "Power", "Uptime"]
     }) as HorizontalTable;
 
     statuses.forEach(status => cardTable.push(buildColumns(status)));
@@ -73,10 +96,11 @@ function displayMiners(statuses: IMinerStatus[]) {
     console.log(cardTable.toString());
 }
 
-function buildColumns(status: IMinerStatus): string[]{
+function buildColumns(status: IMinerStatus): string[] {
     return [
         status.card.index.toString(),
         status.isRunning ? "Up" : "Down",
+        Maybe.nullToMaybe(status.card.power_draw).defaultTo("-"),
         formatDuration(status.upTime)
     ];
 }

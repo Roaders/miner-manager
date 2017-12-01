@@ -8,6 +8,7 @@ import { Maybe } from "maybe-monad";
 export interface INvidiaQuery {
     index: number;
     uuid: string;
+    power_draw?: string;
 }
 
 export function makeQuery(smiParams: IApplicationLaunchParams, queryParams?: (keyof INvidiaQuery)[]): Observable<INvidiaQuery> {
@@ -20,7 +21,7 @@ export function makeQuery(smiParams: IApplicationLaunchParams, queryParams?: (ke
 
     const processParams: string[] = Maybe.nullToMaybe(smiParams.params)
         .orElse([])
-        .map(params => params.concat("--format=csv,noheader", `--query-gpu=${query.join()}`))
+        .map(params => params.concat("--format=csv,noheader", `--query-gpu=${query.map(param => param.replace("_",".")).join()}`))
         .defaultTo([]);
 
     return launchChild(() => spawn(smiParams.path, processParams))

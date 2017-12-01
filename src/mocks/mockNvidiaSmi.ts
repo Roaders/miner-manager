@@ -26,6 +26,11 @@ function queryGpu(args: ICommandArgument[]) {
                     if (output != "") output += ", ";
                     output += `uuid_${index}`;
                     break;
+                case "power.draw":
+                    if (output != "") output += ", ";
+                    const power = (Math.random() * 30) + 90;
+                    output += `${power.toFixed(2).toString()} W`;
+                    break;
             }
         })
 
