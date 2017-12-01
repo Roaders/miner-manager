@@ -18,7 +18,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js --startPort=2340 --logFolder=log --claymorePath=/usr/local/claymore100/ethdcrminer64",
+    "start": "node dist/index.js --startPort=3331 --logFolder=log --claymorePath=/usr/local/claymore100/ethdcrminer64",
     "prestart": "npm run build"
   },
   "repository": {

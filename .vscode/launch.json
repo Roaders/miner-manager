@@ -28,7 +28,7 @@
             "name": "Launch Manager Test",
             "program": "${workspaceFolder}/dist/index.js",
             "args": [
-                "--startPort=2340",
+                "--startPort=3331",
                 "--logFolder=log",
                 "--nvidiaSmiPath=node",
                 "--nvidiaSmiParams=dist/mocks/mockNvidiaSmi.js",
