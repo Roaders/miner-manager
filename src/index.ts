@@ -12,7 +12,7 @@ import * as fs from "fs";
 
 const clear = require("clear");
 
-import formatDuration from "format-duration";
+import formatDuration = require("format-duration");
 
 const formatted = formatDuration(123456);
 

@@ -1,2 +1,4 @@
 
-export default function (ms: number): string;
+declare function formatDuration(ms: number): string;
+
+export = formatDuration;
