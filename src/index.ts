@@ -35,7 +35,7 @@ function createMiner(card: INvidiaQuery): ClaymoreMiner {
 
 const nvidiaSmiStream = Observable.interval(60000)
     .startWith(0)
-    .flatMap(() => makeQuery(settings.nividiSmiLaunchParams, ["power_draw"]).toArray())
+    .flatMap(() => makeQuery(settings.nividiSmiLaunchParams, ["power_draw","power_limit","utilization_gpu","temperature_gpu"]).toArray())
     .do(() => clear())
     .do(() => console.log(`NEW NVIDIA`))
     .share();
@@ -88,7 +88,7 @@ function displayMiners(statuses: IMinerStatus[]) {
     console.log(`${statuses.length} cards found. Launching miners...`);
 
     const cardTable = new Table({
-        head: ["Id", "Status", "Power", "Uptime"]
+        head: ["Id", "Status", "Power", "%", "Temp", "Time"]
     }) as HorizontalTable;
 
     statuses.forEach(status => cardTable.push(buildColumns(status)));
@@ -100,7 +100,20 @@ function buildColumns(status: IMinerStatus): string[] {
     return [
         status.card.index.toString(),
         status.isRunning ? "Up" : "Down",
-        Maybe.nullToMaybe(status.card.power_draw).defaultTo("-"),
+        displayPower(status),
+        Maybe.nullToMaybe(status.card.utilization_gpu).map(x => x.toString()).defaultTo("-"),
+        Maybe.nullToMaybe(status.card.temperature_gpu).map(x => x.toString()).defaultTo("-"),
         formatDuration(status.upTime)
     ];
+}
+
+function displayPower(status: IMinerStatus): string{
+    const powerDraw = Maybe.nullToMaybe(status.card.power_draw).map(p => p.toFixed());
+    const powerLimit = Maybe.nullToMaybe(status.card.power_limit).map(p => p.toFixed());
+
+    return powerDraw
+        .combine(powerLimit)
+        .map(([draw,limit]) => `${draw}/${limit}`)
+        .or(powerDraw)
+        .defaultTo(`-`);
 }

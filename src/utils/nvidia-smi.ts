@@ -8,7 +8,10 @@ import { Maybe } from "maybe-monad";
 export interface INvidiaQuery {
     index: number;
     uuid: string;
-    power_draw?: string;
+    power_draw?: number;
+    power_limit?: number;
+    utilization_gpu?: number;
+    temperature_gpu?: number;
 }
 
 export function makeQuery(smiParams: IApplicationLaunchParams, queryParams?: (keyof INvidiaQuery)[]): Observable<INvidiaQuery> {
@@ -21,12 +24,12 @@ export function makeQuery(smiParams: IApplicationLaunchParams, queryParams?: (ke
 
     const processParams: string[] = Maybe.nullToMaybe(smiParams.params)
         .orElse([])
-        .map(params => params.concat("--format=csv,noheader", `--query-gpu=${query.map(param => param.replace("_",".")).join()}`))
+        .map(params => params.concat("--format=csv,noheader", `--query-gpu=${query.map(param => param.replace("_", ".")).join()}`))
         .defaultTo([]);
 
     return launchChild(() => spawn(smiParams.path, processParams))
         .filter(message => message.event === "data")
-        .map<childEvent,IChildDataEvent>(m => <any>m)
+        .map<childEvent, IChildDataEvent>(m => <any>m)
         .map(message => parseQueryResult(message, query))
         .filter(result => result != null)
         .map<INvidiaQuery | undefined, INvidiaQuery>(result => result!);
@@ -47,7 +50,15 @@ function parseQueryResult(input: IChildDataEvent, queryParams: (keyof INvidiaQue
         let value: any;
         switch (queryParams[i]) {
             case "index":
+            case "temperature_gpu":
                 value = parseInt(values[i]);
+                break;
+            case "utilization_gpu":
+                value = parseUtilization(values[i]);
+                break;
+            case "power_draw":
+            case "power_limit":
+                value = parsePower(values[i]);
                 break;
             default:
                 value = values[i];
@@ -57,4 +68,24 @@ function parseQueryResult(input: IChildDataEvent, queryParams: (keyof INvidiaQue
     }
 
     return result;
+}
+
+function parseUtilization(input: string): number {
+    const regularExpression = /(\d+) *\%/
+
+    return Maybe.nullToMaybe(input)
+        .map(input => regularExpression.exec(input))
+        .map(result => result[1])
+        .map(subString => parseInt(subString))
+        .defaultTo(NaN);
+}
+
+function parsePower(input: string): number {
+    const regularExpression = /([\d\.]+) *W/
+
+    return Maybe.nullToMaybe(input)
+        .map(input => regularExpression.exec(input))
+        .map(result => result[1])
+        .map(subString => parseFloat(subString))
+        .defaultTo(NaN);
 }

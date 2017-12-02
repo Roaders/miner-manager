@@ -17,19 +17,28 @@ function queryGpu(args: ICommandArgument[]) {
         let output = "";
 
         query.value.forEach(value => {
+            if (output != "") output += ", ";
             switch (value) {
                 case "index":
-                    if (output != "") output += ", ";
                     output += index;
                     break;
                 case "uuid":
-                    if (output != "") output += ", ";
                     output += `uuid_${index}`;
                     break;
                 case "power.draw":
-                    if (output != "") output += ", ";
-                    const power = (Math.random() * 30) + 90;
+                    const power = (Math.random() * 30) + 80;
                     output += `${power.toFixed(2).toString()} W`;
+                    break;
+                case "power.limit":
+                    output += `100.00 W`;
+                    break;
+                case "utilization.gpu":
+                    const utilization = (Math.random() * 30) + 70;
+                    output += `${utilization.toFixed().toString()} %`;
+                    break;
+                case "temperature.gpu":
+                    const temperature = Math.floor((Math.random() * 30) + 50);
+                    output += temperature.toString();
                     break;
             }
         })

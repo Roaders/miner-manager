@@ -42,10 +42,10 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Mock SMI uuid",
+            "name": "Mock Nvidia SMI",
             "program": "${workspaceFolder}/dist/mocks/mockNvidiaSmi.js",
             "args": [
-                "--query-gpu=index,uuid",
+                "--query-gpu=index,uuid,power.draw,power.limit,utilization.gpu,temperature.gpu",
                 "--format=csv,noheader"
             ],
             "sourceMaps": true,
