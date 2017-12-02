@@ -42,7 +42,8 @@ const nvidiaSmiStream = Observable.interval(60000)
 
 const minerUpdates = nvidiaSmiStream
     .take(1)
-    .flatMap(createMiners);
+    .flatMap(createMiners)
+    .share();
 
 minerUpdates.combineLatest(nvidiaSmiStream.takeUntil(minerUpdates.takeLast(1)))
     .map(([minerStatuses, nvidiaQuery]) => updateStatuses(minerStatuses, nvidiaQuery))
@@ -64,6 +65,9 @@ function updateStatuses(minerStatuses: IMinerStatus[], cards: INvidiaQuery[]) {
 }
 
 function createMiners(ids: INvidiaQuery[]): Observable<IMinerStatus[]> {
+
+    console.log(`creating miners: ${ids.length}`);
+
     const miners = ids.map(createMiner);
 
     const intervalStream = Observable.interval(1000)
