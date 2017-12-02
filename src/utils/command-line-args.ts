@@ -8,6 +8,7 @@ export interface ICommandLineValues{
     nvidiaSmiParams?: string[];
     claymorePath: string;
     claymoreParams?: string[];
+    minerBaseName?: string;
 }
 
 interface OptionWithKeyOf extends OptionDefinition{
@@ -35,5 +36,8 @@ export const commandArgs: OptionWithKeyOf[] = [
     {
         name: "claymoreParams",
         multiple: true
+    },
+    {
+        name: "minerBaseName"
     }
 ];

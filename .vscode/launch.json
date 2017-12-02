@@ -15,7 +15,8 @@
                 "--nvidiaSmiPath=node",
                 "--nvidiaSmiParams=dist/mocks/mockNvidiaSmi.js",
                 "--claymorePath=node",
-                "--claymoreParams=dist/mocks/mockClaymore.js"
+                "--claymoreParams=dist/mocks/mockClaymore.js",
+                "--minerBaseName=MockAndy"
             ],
             "sourceMaps": true,
             "console": "externalTerminal",
@@ -58,7 +59,7 @@
             "request": "launch",
             "name": "Mock claymore",
             "program": "${workspaceFolder}/dist/mocks/mockClaymore.js",
-            "args": ["-mport 3335"],
+            "args": ["-mport 3335", "-eworker Andy"],
             "sourceMaps": true,
             "console": "internalConsole",
             "internalConsoleOptions": "openOnSessionStart",

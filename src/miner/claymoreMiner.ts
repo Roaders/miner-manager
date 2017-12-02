@@ -52,18 +52,17 @@ export class ClaymoreMiner {
         const launchSettings = this._settings.claymoreLaunchParams;
         const logPath = path.join(this._settings.logFolder, `Clay_GPU${this._card.index}_${Date.now()}.log`);
 
+        const name = Maybe.nullToMaybe(this._settings.mineraBaseName)
+            .map(name => `${name}_${this._card.index}`);
+
         const minerParams = Maybe.nullToMaybe(launchSettings.params)
             .orElse([])
-            .map(params => { params.push(`-mport`); return params; })
-            .map(params => { params.push(this._port.toString()); return params; })
-            .map(params => { params.push(`-logfile`); return params; })
-            .map(params => { params.push(logPath); return params; })
-            .map(params => { params.push(`-di`); return params; })
-            .map(params => { params.push(this.getCardIdentifier(this._card.index)); return params; })
-            .map(params => { params.push(`-erate`); return params; })
-            .map(params => { params.push("0"); return params; })
-            .map(params => { params.push(`-r`); return params; })
-            .map(params => { params.push("1"); return params; })
+            .map(params => { params.push(`-mport`,this._port.toString()); return params; })
+            .map(params => { params.push(`-logfile`,logPath); return params; })
+            .map(params => { params.push(`-di`,this.getCardIdentifier(this._card.index)); return params; })
+            .map(params => { params.push(`-r`,"1"); return params; })
+            .map(params => { name.do(n => params.push("-eworker",n)); return params; })
+            .map(params => { name.elseDo(() => params.push("-erate","0")); return params; })
             .defaultTo(undefined);
 
         this._isRunning = true;
