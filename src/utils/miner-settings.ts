@@ -30,7 +30,9 @@ export class MinerSettings {
         this._nvidiaSmiPath = Maybe.nullToMaybe(commandLineValues.nvidiaSmiPath).defaultTo("nvidia-smi");
         this._nvidiaSmiParams = commandLineValues.nvidiaSmiParams;
         this._claymoreParams = commandLineValues.claymoreParams;
-        this._mineraBaseName = commandLineValues.minerBaseName;
+        this._minerBaseName = commandLineValues.minerBaseName;
+        this._poolAddress = commandLineValues.poolAddress;
+        this._walletAddress = commandLineValues.walletAddress;
     }
 
     private _settingsValid: boolean;
@@ -65,10 +67,22 @@ export class MinerSettings {
         return this._startPort;
     }
 
-    private _mineraBaseName: string | undefined;
+    private _minerBaseName: string | undefined;
 
-    public get mineraBaseName(): string | undefined {
-        return this._mineraBaseName;
+    public get minerBaseName(): string | undefined {
+        return this._minerBaseName;
+    }
+
+    private _poolAddress: string | undefined;
+
+    public get poolAddress(): string | undefined {
+        return this._poolAddress;
+    }
+
+    private _walletAddress: string | undefined;
+
+    public get walletAddress(): string | undefined {
+        return this._walletAddress;
     }
 
     private _logFolder: string;

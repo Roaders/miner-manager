@@ -1,5 +1,5 @@
 
-import { MinerSettings } from "../utils/miner-settings";
+import { MinerSettings, IApplicationLaunchParams } from "../utils/miner-settings";
 import { Observable } from "rxjs/Observable";
 import { INvidiaQuery } from "../utils/nvidia-smi";
 import { launchChild, childEvent } from "../utils/rx-child-process";
@@ -49,32 +49,50 @@ export class ClaymoreMiner {
     public launch(): Observable<IMinerStatus> {
         this._startTime = Date.now();
 
-        const launchSettings = this._settings.claymoreLaunchParams;
-        const logPath = path.join(this._settings.logFolder, `Clay_GPU${this._card.index}_${Date.now()}.log`);
-
-        const name = Maybe.nullToMaybe(this._settings.mineraBaseName)
-            .map(name => `${name}_${this._card.index}`);
-
-        const minerParams = Maybe.nullToMaybe(launchSettings.params)
-            .orElse([])
-            .map(params => { params.push(`-mport`,this._port.toString()); return params; })
-            .map(params => { params.push(`-logfile`,logPath); return params; })
-            .map(params => { params.push(`-di`,this.getCardIdentifier(this._card.index)); return params; })
-            .map(params => { params.push(`-r`,"1"); return params; })
-            .map(params => { name.do(n => params.push("-eworker",n)); return params; })
-            .map(params => { name.elseDo(() => params.push("-erate","0")); return params; })
-            .defaultTo(undefined);
+        const minerParams = this.buildMinerParams();
 
         this._isRunning = true;
 
         this._logger.info(`Claymore miner for index: ${this._card.index}, uuid: ${this._card.uuid} and port: ${this._port}`);
 
-        return Observable.defer(() => launchChild(() => spawn(launchSettings.path, minerParams))
+        return Observable.defer(() => launchChild(() => spawn(this._settings.claymoreLaunchParams.path, minerParams))
             .do(message => this.storeMessages(message))
             .map(message => this.handleMessages(message))
             .filter(message => message != null)
             .map<IMinerStatus | null, IMinerStatus>(m => m!))
             .merge(Observable.of(this.status));
+    }
+
+    private buildMinerParams() {
+
+        const logPath = path.join(this._settings.logFolder, `Clay_GPU${this._card.index}_${Date.now()}.log`);
+
+        
+
+        const minerParams = Maybe.nullToMaybe(this._settings.claymoreLaunchParams.params)
+            .defaultTo<string[]>([]);
+
+        minerParams.push(`-mport`, this._port.toString()); // management port
+        minerParams.push(`-logfile`, logPath); // log path
+        minerParams.push(`-di`, this.getCardIdentifier(this._card.index)); // card index
+        minerParams.push(`-r`, "1"); // do not restart miner
+
+        const poolAddress = Maybe.nullToMaybe(this._settings.poolAddress);
+        const walletAddress = Maybe.nullToMaybe(this._settings.walletAddress);
+        const name = Maybe.nullToMaybe(this._settings.minerBaseName)
+            .orElse("Miner")
+            .map(name => `${name}_${this._card.index}`);
+
+        poolAddress.combine(walletAddress,name)
+            .do(([pool,wallet,name]) => {
+                minerParams.push("-eworker", name)  //  Worker Name
+                minerParams.push("-epool", pool)  //  Pool Address
+                minerParams.push("-ewal", wallet)  //  Wallet Address
+            })
+            .elseDo(() => minerParams.push("-erate", "0")); // do not send rate as we will have multiple miners on same name
+
+
+        return minerParams;
     }
 
     private getCardIdentifier(index: number): string {

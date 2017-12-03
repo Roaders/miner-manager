@@ -9,6 +9,8 @@ export interface ICommandLineValues{
     claymorePath: string;
     claymoreParams?: string[];
     minerBaseName?: string;
+    poolAddress?: string;
+    walletAddress?: string;
 }
 
 interface OptionWithKeyOf extends OptionDefinition{
@@ -39,5 +41,11 @@ export const commandArgs: OptionWithKeyOf[] = [
     },
     {
         name: "minerBaseName"
+    },
+    {
+        name: "poolAddress"
+    },
+    {
+        name: "walletAddress"
     }
 ];
