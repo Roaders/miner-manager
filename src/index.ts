@@ -36,8 +36,6 @@ function createMiner(card: INvidiaQuery): ClaymoreMiner {
 const nvidiaSmiStream = Observable.interval(60000)
     .startWith(0)
     .flatMap(() => makeQuery(settings.nividiSmiLaunchParams, ["power_draw","power_limit","utilization_gpu","temperature_gpu"]).toArray())
-    .do(() => clear())
-    .do(() => console.log(`NEW NVIDIA`))
     .share();
 
 const minerUpdates = nvidiaSmiStream

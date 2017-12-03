@@ -64,6 +64,16 @@
             "console": "internalConsole",
             "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": "buildTypescript"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Remote Test",
+            "program": "${workspaceFolder}/dist/remoteTest.js",
+            "sourceMaps": true,
+            "console": "internalConsole",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "buildTypescript"
         }
     ]
 }
