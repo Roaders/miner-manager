@@ -32,16 +32,16 @@ export class ClaymoreMiner {
     private _startTime: number | undefined;
     private _endTime: number | undefined;
 
-    public get status(): IMinerStatus {
-        return {
-            isRunning: this._isRunning,
-            upTime: Maybe.nullToMaybe(this._startTime)
-                .combine(Maybe.nullToMaybe(this._endTime)
-                    .orElse(Date.now()))
-                .map(([startTime, endTime]) => endTime - startTime)
-                .defaultTo(0),
-            card: this._card
-        };
+    public get isRunning(): boolean {
+        return this._isRunning;
+    }
+
+    public get card(): INvidiaQuery {
+        return this._card;
+    }
+
+    public getStatusAsync(query: INvidiaQuery): Observable<IMinerStatus> {
+        return Observable.of(this.constructStatus());
     }
 
     private _logger: winston.LoggerInstance;
@@ -60,14 +60,14 @@ export class ClaymoreMiner {
             .map(message => this.handleMessages(message))
             .filter(message => message != null)
             .map<IMinerStatus | null, IMinerStatus>(m => m!))
-            .merge(Observable.of(this.status));
+            .merge(this.getStatusAsync(this._card));
     }
 
     private buildMinerParams() {
 
         const logPath = path.join(this._settings.logFolder, `Clay_GPU${this._card.index}_${Date.now()}.log`);
 
-        
+
 
         const minerParams = Maybe.nullToMaybe(this._settings.claymoreLaunchParams.params)
             .defaultTo<string[]>([]);
@@ -83,8 +83,8 @@ export class ClaymoreMiner {
             .orElse("Miner")
             .map(name => `${name}_${this._card.index}`);
 
-        poolAddress.combine(walletAddress,name)
-            .do(([pool,wallet,name]) => {
+        poolAddress.combine(walletAddress, name)
+            .do(([pool, wallet, name]) => {
                 minerParams.push("-eworker", name)  //  Worker Name
                 minerParams.push("-epool", pool)  //  Pool Address
                 minerParams.push("-ewal", wallet)  //  Wallet Address
@@ -103,6 +103,18 @@ export class ClaymoreMiner {
         }
     }
 
+    private constructStatus(): { isRunning: boolean; upTime: number; card: INvidiaQuery; } {
+        return {
+            isRunning: this._isRunning,
+            upTime: Maybe.nullToMaybe(this._startTime)
+                .combine(Maybe.nullToMaybe(this._endTime)
+                    .orElse(Date.now()))
+                .map(([startTime, endTime]) => endTime - startTime)
+                .defaultTo(0),
+            card: this._card
+        };
+    }
+
     private handleMessages(message: childEvent): IMinerStatus | null {
 
         switch (message.event) {
@@ -114,7 +126,7 @@ export class ClaymoreMiner {
 
             case "exit":
                 this._isRunning = false;
-                return this.status;
+                return this.constructStatus();
         }
 
         return null;

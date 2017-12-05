@@ -14,7 +14,7 @@ export interface INvidiaQuery {
     temperature_gpu?: number;
 }
 
-export function makeQuery(smiParams: IApplicationLaunchParams, queryParams?: (keyof INvidiaQuery)[]): Observable<INvidiaQuery> {
+export function makeNvidiaQuery(smiParams: IApplicationLaunchParams, queryParams?: (keyof INvidiaQuery)[]): Observable<INvidiaQuery[]> {
 
     const query = Maybe.nullToMaybe(queryParams)
         .orElse([])
@@ -32,7 +32,8 @@ export function makeQuery(smiParams: IApplicationLaunchParams, queryParams?: (ke
         .map<childEvent, IChildDataEvent>(m => <any>m)
         .map(message => parseQueryResult(message, query))
         .filter(result => result != null)
-        .map<INvidiaQuery | undefined, INvidiaQuery>(result => result!);
+        .map<INvidiaQuery | undefined, INvidiaQuery>(result => result!)
+        .toArray();
 }
 
 function parseQueryResult(input: IChildDataEvent, queryParams: (keyof INvidiaQuery)[]): INvidiaQuery | undefined {

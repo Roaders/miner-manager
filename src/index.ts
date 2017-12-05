@@ -1,5 +1,5 @@
 
-import { INvidiaQuery, makeQuery } from "./utils/nvidia-smi";
+import { INvidiaQuery, makeNvidiaQuery } from "./utils/nvidia-smi";
 import { MinerSettings } from "./utils/miner-settings";
 import { Observable } from "rxjs/Observable";
 import { launchChild } from "./utils/rx-child-process";
@@ -29,59 +29,47 @@ try {
 }
 catch (e) { }
 
-function createMiner(card: INvidiaQuery): ClaymoreMiner {
-    return new ClaymoreMiner(card, settings.startPort + card.index, settings);
-}
-
-const nvidiaSmiStream = Observable.interval(60000)
-    .startWith(0)
-    .flatMap(() => makeQuery(settings.nividiSmiLaunchParams, ["power_draw","power_limit","utilization_gpu","temperature_gpu"]).toArray())
-    .share();
-
-const minerUpdates = nvidiaSmiStream
-    .take(1)
+createNvidiaQueryStream()
     .flatMap(createMiners)
-    .share();
-
-minerUpdates.combineLatest(nvidiaSmiStream.takeUntil(minerUpdates.takeLast(1)))
-    .map(([minerStatuses, nvidiaQuery]) => updateStatuses(minerStatuses, nvidiaQuery))
     .subscribe(
-    statuses => displayMiners(statuses),
-    error => console.log(`Error: ${error}`)
+        statuses => displayMiners(statuses),
+        error => console.log(`Error: ${error}`)
     );
 
-function updateStatuses(minerStatuses: IMinerStatus[], cards: INvidiaQuery[]) {
-    minerStatuses.forEach(status => {
-        const queryResult = cards.filter(card => card.uuid === status.card.uuid);
-
-        if(queryResult.length === 1){
-            status.card = queryResult[0];
-        }
-    })
-
-    return minerStatuses;
+function createNvidiaQueryStream(): Observable<INvidiaQuery[]> {
+    return makeNvidiaQuery(settings.nividiSmiLaunchParams, ["power_draw", "power_limit", "utilization_gpu", "temperature_gpu"]);
 }
 
 function createMiners(ids: INvidiaQuery[]): Observable<IMinerStatus[]> {
 
     console.log(`creating miners: ${ids.length}`);
 
-    const miners = ids.map(createMiner);
+    const miners = ids.map( card => new ClaymoreMiner(card, settings.startPort + card.index, settings));
 
-    const intervalStream = Observable.interval(1000)
+    const queryStream = Observable.interval(5000)
+        .flatMap(() => createNvidiaQueryStream())
+        .takeWhile(() => miners.some(miner => miner.isRunning));
 
-    const minerUpdates = Observable.combineLatest(miners.map(miner => createMinerStream(miner, intervalStream)))
+    const minerUpdates = Observable.combineLatest(miners.map(miner => createMinerStream(miner, queryStream)))
 
     return minerUpdates;
 }
 
-function createMinerStream(miner: ClaymoreMiner, interval: Observable<number>): Observable<IMinerStatus> {
+function createMinerStream(miner: ClaymoreMiner, queries: Observable<INvidiaQuery[]>): Observable<IMinerStatus> {
     const minerUpdates = miner.launch();
 
-    const intervalUpdates = interval.map(() => miner.status)
-        .takeWhile(() => miner.status.isRunning);
+    const queryUpdates = queries
+        .map(queries => getQueryForCard(miner.card,queries))
+        .filter(query => query != undefined)
+        .map<INvidiaQuery | undefined,INvidiaQuery>(q => q!)
+        .flatMap(query => miner.getStatusAsync(query))
+        .takeWhile(() => miner.isRunning);
 
-    return minerUpdates.merge(intervalUpdates);
+    return minerUpdates.merge(queryUpdates);
+}
+
+function getQueryForCard(card: INvidiaQuery, queries: INvidiaQuery[]): INvidiaQuery | undefined{
+    return queries.filter(query => query.uuid === card.uuid)[0];
 }
 
 function displayMiners(statuses: IMinerStatus[]) {
@@ -109,13 +97,13 @@ function buildColumns(status: IMinerStatus): string[] {
     ];
 }
 
-function displayPower(status: IMinerStatus): string{
+function displayPower(status: IMinerStatus): string {
     const powerDraw = Maybe.nullToMaybe(status.card.power_draw).map(p => p.toFixed());
     const powerLimit = Maybe.nullToMaybe(status.card.power_limit).map(p => p.toFixed());
 
     return powerDraw
         .combine(powerLimit)
-        .map(([draw,limit]) => `${draw}/${limit}`)
+        .map(([draw, limit]) => `${draw}/${limit}`)
         .or(powerDraw)
         .defaultTo(`-`);
 }
