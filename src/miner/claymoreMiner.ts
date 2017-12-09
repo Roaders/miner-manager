@@ -41,6 +41,8 @@ export class ClaymoreMiner {
     }
 
     public getStatusAsync(query: INvidiaQuery): Observable<IMinerStatus> {
+        this._card = query;
+
         return Observable.of(this.constructStatus());
     }
 
