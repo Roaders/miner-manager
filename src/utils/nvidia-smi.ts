@@ -21,6 +21,9 @@ export function makeNvidiaQuery(smiParams: IApplicationLaunchParams, queryParams
         .map(params => { params.unshift("index"); return params; })
         .map(params => { params.unshift("uuid"); return params; })
         .defaultTo<(keyof INvidiaQuery)[]>([]);
+    
+    const queryStart = Date.now();
+    console.log(`Nvidia-smi query:`);
 
     const processParams: string[] = Maybe.nullToMaybe(smiParams.params)
         .orElse([])
@@ -33,10 +36,14 @@ export function makeNvidiaQuery(smiParams: IApplicationLaunchParams, queryParams
         .map(message => parseQueryResult(message, query))
         .filter(result => result != null)
         .map<INvidiaQuery | undefined, INvidiaQuery>(result => result!)
-        .toArray();
+        .toArray()
+        .do(() => console.log(`Query Complete in ${Date.now() - queryStart}`));
 }
 
 function parseQueryResult(input: IChildDataEvent, queryParams: (keyof INvidiaQuery)[]): INvidiaQuery | undefined {
+
+    console.log(`Nvidia-smi result: ${input.data}`);
+
     const values = input.data.split(", ");
 
     if (values.length !== queryParams.length) {

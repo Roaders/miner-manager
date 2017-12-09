@@ -15,8 +15,6 @@ import formatDuration = require("format-duration");
 import { stat } from "fs";
 import { start } from "repl";
 
-const clear = require("clear");
-
 const settings = new MinerSettings();
 
 if (!settings || !settings.allSettingsDefined) {
@@ -27,10 +25,11 @@ if (!settings || !settings.allSettingsDefined) {
 try {
     fs.mkdirSync(settings.logFolder);
 }
-catch (e) { }
+catch (e) {}
 
 createNvidiaQueryStream()
     .flatMap(createMiners)
+    .sampleTime(1000)
     .subscribe(
         statuses => displayMiners(statuses),
         error => console.log(`Error: ${error}`)
@@ -42,13 +41,14 @@ function createNvidiaQueryStream(): Observable<INvidiaQuery[]> {
 
 function createMiners(ids: INvidiaQuery[]): Observable<IMinerStatus[]> {
 
-    console.log(`creating miners: ${ids.length}`);
+    console.log(`${ids.length} cards found. Launching miners...`)
 
     const miners = ids.map( card => new ClaymoreMiner(card, settings.startPort + card.index, settings));
 
-    const queryStream = Observable.interval(5000)
+    const queryStream = Observable.interval(settings.queryInterval)
         .flatMap(() => createNvidiaQueryStream())
-        .takeWhile(() => miners.some(miner => miner.isRunning));
+        .takeWhile(() => miners.some(miner => miner.isRunning))
+        .share();
 
     const minerUpdates = Observable.combineLatest(miners.map(miner => createMinerStream(miner, queryStream)))
 
@@ -73,10 +73,6 @@ function getQueryForCard(card: INvidiaQuery, queries: INvidiaQuery[]): INvidiaQu
 }
 
 function displayMiners(statuses: IMinerStatus[]) {
-    clear(false);
-
-    console.log(`${statuses.length} cards found. Launching miners...`);
-
     const cardTable = new Table({
         head: ["Id", "Status", "Power", "%", "Temp", "Time"]
     }) as HorizontalTable;

@@ -33,6 +33,7 @@ export class MinerSettings {
         this._minerBaseName = commandLineValues.minerBaseName;
         this._poolAddress = commandLineValues.poolAddress;
         this._walletAddress = commandLineValues.walletAddress;
+        this._queryInterval = commandLineValues.queryInterval;
     }
 
     private _settingsValid: boolean;
@@ -65,6 +66,12 @@ export class MinerSettings {
 
     public get startPort(): number {
         return this._startPort;
+    }
+
+    private _queryInterval: number;
+
+    public get queryInterval(): number {
+        return this._queryInterval;
     }
 
     private _minerBaseName: string | undefined;

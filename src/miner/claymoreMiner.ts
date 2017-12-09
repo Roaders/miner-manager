@@ -67,8 +67,6 @@ export class ClaymoreMiner {
 
         const logPath = path.join(this._settings.logFolder, `Clay_GPU${this._card.index}_${Date.now()}.log`);
 
-
-
         const minerParams = Maybe.nullToMaybe(this._settings.claymoreLaunchParams.params)
             .defaultTo<string[]>([]);
 
@@ -118,15 +116,23 @@ export class ClaymoreMiner {
     private handleMessages(message: childEvent): IMinerStatus | null {
 
         switch (message.event) {
+
             case "data":
-                if (/Setting DAG epoch \#\d+ for GPU\d done/.test(message.data)) {
-                    return null;
-                }
+                console.log(`GPU ${this._card.index} (source: ${message.source}): ${message.data}`);
+                break;
+
+            case "error":
+                console.log(`GPU ${this._card.index} ERROR (source: ${message.source}): ${message.error.message}`);
                 break;
 
             case "exit":
+                console.log(`GPU ${this._card.index}: EXIT source: ${message.source}`);
                 this._isRunning = false;
                 return this.constructStatus();
+
+            default:
+                console.log(`GPU ${this._card.index} event: ${message.event} source: ${message.source}`);
+
         }
 
         return null;

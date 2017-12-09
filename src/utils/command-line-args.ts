@@ -11,6 +11,7 @@ export interface ICommandLineValues{
     minerBaseName?: string;
     poolAddress?: string;
     walletAddress?: string;
+    queryInterval: number;
 }
 
 interface OptionWithKeyOf extends OptionDefinition{
@@ -47,5 +48,10 @@ export const commandArgs: OptionWithKeyOf[] = [
     },
     {
         name: "walletAddress"
+    },
+    {
+        name: "queryInterval",
+        defaultValue: 60000,
+        type: value => parseInt(value)
     }
 ];

@@ -22,7 +22,7 @@ process.argv.forEach(arg => {
 
 port = port ? port : 3333;
 
-console.log(`args: ${process.argv}`)
+//console.log(`args: ${process.argv}`)
 console.log(`launching server ${workerName}: ${port}`);
 
 // http.createServer((request, response) => {
@@ -32,6 +32,6 @@ console.log(`launching server ${workerName}: ${port}`);
 
 const dieTime = (Math.random() * 20000) + 1500;
 
-console.log(`dieTime: ${dieTime}`);
+//console.log(`dieTime: ${dieTime}`);
 
 setTimeout(() => process.exit(), dieTime);

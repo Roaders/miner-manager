@@ -16,10 +16,11 @@
                 "--nvidiaSmiParams=dist/mocks/mockNvidiaSmi.js",
                 "--claymorePath=node",
                 "--claymoreParams=dist/mocks/mockClaymore.js",
-                "--minerBaseName=MockAndy"
+                "--minerBaseName=MockAndy",
+                "--queryInterval=7000"
             ],
             "sourceMaps": true,
-            "console": "externalTerminal",
+            "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": "buildTypescript"
         },
