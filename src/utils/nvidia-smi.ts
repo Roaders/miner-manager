@@ -4,6 +4,7 @@ import { launchChild, IChildDataEvent, childEvent } from "./rx-child-process";
 import { Observable } from "rxjs";
 import { spawn } from "child_process";
 import { Maybe } from "maybe-monad";
+import formatDuration = require("format-duration");
 
 export interface INvidiaQuery {
     index: number;
@@ -37,7 +38,7 @@ export function makeNvidiaQuery(smiParams: IApplicationLaunchParams, queryParams
         .filter(result => result != null)
         .map<INvidiaQuery | undefined, INvidiaQuery>(result => result!)
         .toArray()
-        .do(() => console.log(`Query Complete in ${Date.now() - queryStart}`));
+        .do(() => console.log(`Query Complete in ${formatDuration(Date.now() - queryStart)}`));
 }
 
 function parseQueryResult(input: IChildDataEvent, queryParams: (keyof INvidiaQuery)[]): INvidiaQuery | undefined {
