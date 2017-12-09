@@ -27,7 +27,7 @@ export class ClaymoreMiner {
         this._logger.info(`Card id ${_card.uuid}`);
     }
 
-    private _isRunning: boolean;
+    private _isRunning: boolean = false;
 
     private _startTime: number | undefined;
     private _endTime: number | undefined;
@@ -52,8 +52,6 @@ export class ClaymoreMiner {
         this._startTime = Date.now();
 
         const minerParams = this.buildMinerParams();
-
-        this._isRunning = true;
 
         this._logger.info(`Claymore miner for index: ${this._card.index}, uuid: ${this._card.uuid} and port: ${this._port}`);
 
@@ -103,7 +101,7 @@ export class ClaymoreMiner {
         }
     }
 
-    private constructStatus(): { isRunning: boolean; upTime: number; card: INvidiaQuery; } {
+    private constructStatus(): IMinerStatus {
         return {
             isRunning: this._isRunning,
             upTime: Maybe.nullToMaybe(this._startTime)
@@ -121,6 +119,10 @@ export class ClaymoreMiner {
 
             case "data":
                 console.log(`GPU ${this._card.index} (source: ${message.source}): ${message.data}`);
+                if(message.data.indexOf(`Remote management is enabled`) >= 0){
+                    this._isRunning = true;
+                    return this.constructStatus();
+                }
                 break;
 
             case "error":
