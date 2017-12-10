@@ -9,8 +9,10 @@ import { spawn } from "child_process";
 import { Maybe } from "maybe-monad";
 import * as winston from "winston";
 import * as path from "path";
+import { stat } from "fs";
 
-export enum MinerStatus{
+//  TODO: need to use better names to distinguish the interface and enum
+export enum MinerStatus {
     waiting = "Waiting",
     launching = "Launching",
     up = "Up",
@@ -22,7 +24,8 @@ export interface IMinerStatus {
     status: string;
     upTime: number;
     cardDetails: INvidiaQuery;
-    claymoreDetails?: IClaymoreStats
+    claymoreDetails?: IClaymoreStats;
+    hashEfficiency?: number;
 }
 
 export class ClaymoreMiner {
@@ -56,11 +59,11 @@ export class ClaymoreMiner {
     }
 
     public getStatusAsync(query?: INvidiaQuery): Observable<IMinerStatus> {
-        if(query){
+        if (query) {
             this._card = query;
         }
 
-        if(this._status === MinerStatus.up || this._status === MinerStatus.launching){
+        if (this._status === MinerStatus.up || this._status === MinerStatus.launching) {
             return this._claymoreService.getMinerStats()
                 .do(() => this._status = MinerStatus.up)
                 .catch(error => {
@@ -84,7 +87,7 @@ export class ClaymoreMiner {
         this._logger.info(`Claymore miner for index: ${this._card.index}, uuid: ${this._card.uuid} and port: ${this._port}`);
 
         return Observable.defer(() => launchChild(() => spawn(this._settings.claymoreLaunchParams.path, minerParams))
-            .do(() => {}, undefined, () => console.log(`Child stream complete for GPU ${this._card.index}`))
+            .do(() => { }, undefined, () => console.log(`Child stream complete for GPU ${this._card.index}`))
             .do(message => this.storeMessages(message))
             .map(message => this.handleMessages(message))
             .filter(message => message != null)
@@ -131,6 +134,11 @@ export class ClaymoreMiner {
     }
 
     private constructStatus(claymoreStats?: IClaymoreStats): IMinerStatus {
+        const maybePower = Maybe.nullToMaybe(this._card.power_draw);
+        const maybeHashRate = Maybe.nullToMaybe(claymoreStats)
+            .map(stats => stats.ethHashes)
+            .map(eth => eth.rate);
+
         return {
             status: this._status,
             upTime: Maybe.nullToMaybe(this._startTime)
@@ -139,7 +147,10 @@ export class ClaymoreMiner {
                 .map(([startTime, endTime]) => endTime - startTime)
                 .defaultTo(0),
             cardDetails: this._card,
-            claymoreDetails: claymoreStats
+            claymoreDetails: claymoreStats,
+            hashEfficiency: maybeHashRate.combine(maybePower)
+                .map(([rate,power]) => rate/power)
+                .defaultTo(undefined)
         };
     }
 
@@ -149,7 +160,7 @@ export class ClaymoreMiner {
 
             case "data":
                 console.log(`GPU ${this._card.index} (source: ${message.source}): ${message.data}`);
-                if(message.data.indexOf(`Remote management is enabled`) >= 0){
+                if (message.data.indexOf(`Remote management is enabled`) >= 0) {
                     this._status = MinerStatus.up;
                     return this.constructStatus();
                 }
