@@ -3,7 +3,7 @@ import { Socket } from "net";
 
 export interface IClaymoreStats {
     version: string,
-    runningTime: number,
+    runningTimeMs: number,
     hashrate: number,
     shares: number,
     rejectedShared: number,
@@ -47,7 +47,7 @@ export class ClaymoreService {
             return {
                 version,
                 pool,
-                runningTime: parseInt(runningTime),
+                runningTimeMs: parseInt(runningTime) * 60 * 1000, // convert to ms
                 hashrate: parseInt(hashString) / 1000,
                 shares: parseInt(sharesString),
                 rejectedShared: parseInt(rejectsString)

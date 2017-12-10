@@ -92,7 +92,7 @@ function buildColumns(status: IMinerStatus): string[] {
         displayPower(status),
         cardMaybe.map(details => details.utilization_gpu).map(x => x.toString()).defaultTo("-"),
         cardMaybe.map(details => details.temperature_gpu).map(x => x.toString()).defaultTo("-"),
-        mineMaybe.map(details => details.runningTime).map(x => x.toString()).defaultTo("-"),
+        mineMaybe.map(details => details.runningTimeMs).map(x => formatDuration(x)).defaultTo("-"),
         mineMaybe.map(details => details.hashrate).map(x => x.toString()).defaultTo("-"),
         mineMaybe.map(details => details.shares)
             .combine(mineMaybe.map(d => d.rejectedShared))
