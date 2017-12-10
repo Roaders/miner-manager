@@ -3,7 +3,7 @@ import { INvidiaQuery, makeNvidiaQuery } from "./utils/nvidia-smi";
 import { MinerSettings } from "./utils/miner-settings";
 import { Observable } from "rxjs/Observable";
 import { launchChild } from "./utils/rx-child-process";
-import { ClaymoreMiner, IMinerStatus } from "./miner/claymoreMiner";
+import { ClaymoreMiner, IMinerStatus, MinerStatus } from "./miner/claymoreMiner";
 import { HorizontalTable } from "cli-table2";
 import { Maybe } from "maybe-monad";
 
@@ -47,7 +47,7 @@ function createMiners(ids: INvidiaQuery[]): Observable<IMinerStatus[]> {
 
     const queryStream = Observable.interval(settings.queryInterval)
         .flatMap(() => createNvidiaQueryStream())
-        .takeWhile(() => miners.some(miner => miner.isRunning))
+        .takeWhile(() => miners.some(miner => miner.status === MinerStatus.up))
         .share();
 
     const minerUpdates = Observable.combineLatest(miners.map(miner => createMinerStream(miner, queryStream)))
@@ -63,7 +63,7 @@ function createMinerStream(miner: ClaymoreMiner, queries: Observable<INvidiaQuer
         .filter(query => query != undefined)
         .map<INvidiaQuery | undefined,INvidiaQuery>(q => q!)
         .flatMap(query => miner.getStatusAsync(query))
-        .takeWhile(() => miner.isRunning);
+        .takeWhile(() => miner.status === MinerStatus.up);
 
     return minerUpdates.merge(queryUpdates);
 }
@@ -85,7 +85,7 @@ function displayMiners(statuses: IMinerStatus[]) {
 function buildColumns(status: IMinerStatus): string[] {
     return [
         status.card.index.toString(),
-        status.isRunning ? "Up" : "Down",
+        status.status,
         displayPower(status),
         Maybe.nullToMaybe(status.card.utilization_gpu).map(x => x.toString()).defaultTo("-"),
         Maybe.nullToMaybe(status.card.temperature_gpu).map(x => x.toString()).defaultTo("-"),

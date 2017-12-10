@@ -7,23 +7,25 @@ import { setTimeout } from "timers";
 import * as net from "net";
 
 let port: number | undefined;
-let workerName: string | undefined;
 
-const portRegExp = /-mport +(\d+)/;
-const workerNameRegExp = /-eworker +(\w+)/;
+const portRegExp = /^\d+$/;
 
-process.argv.forEach(arg => {
-    const portResult = portRegExp.exec(arg);
-    if (portResult) {
-        port = parseInt(portResult[1]);
+//console.log(`args: ${process.argv}`)
+
+for (let argIndex = 0; argIndex < process.argv.length; argIndex++) {
+    const currentArg = process.argv[argIndex];
+
+    if (currentArg === "-mport") {
+        argIndex++;
+        const portArg = process.argv[argIndex];
+
+        if (portRegExp.test(portArg)) {
+            port = parseInt(portArg);
+        }
     }
-    const workerNameResult = workerNameRegExp.exec(arg);
-    if (workerNameResult) {
-        workerName = workerNameResult[1];
-    }
-})
+}
 
-port = port ? port : 3333;
+port = port != undefined ? port : 3333;
 
 const startTime = Math.random() * 2500;
 
@@ -45,13 +47,6 @@ setTimeout(() => {
     server.listen(port, () => console.log(`server listening`));
 
 }, startTime)
-
-//console.log(`args: ${process.argv}`)
-
-// http.createServer((request, response) => {
-//     response.writeHead(200, {'Content-Type': 'text/plain'}); 
-//     response.end(`Hello World port ${port}\n`);
-// }).listen(port);
 
 const dieTime = (Math.random() * 20000) + 3000;
 

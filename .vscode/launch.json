@@ -60,7 +60,7 @@
             "request": "launch",
             "name": "Mock claymore",
             "program": "${workspaceFolder}/dist/mocks/mockClaymore.js",
-            "args": ["-mport 3335", "-eworker Andy"],
+            "args": ["-mport","3335"],
             "sourceMaps": true,
             "console": "internalConsole",
             "internalConsoleOptions": "openOnSessionStart",

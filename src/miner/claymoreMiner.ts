@@ -1,15 +1,24 @@
 
 import { MinerSettings, IApplicationLaunchParams } from "../utils/miner-settings";
+import { launchChild, childEvent } from "../utils/rx-child-process";
+
 import { Observable } from "rxjs/Observable";
 import { INvidiaQuery } from "../utils/nvidia-smi";
-import { launchChild, childEvent } from "../utils/rx-child-process";
 import { spawn } from "child_process";
 import { Maybe } from "maybe-monad";
 import * as winston from "winston";
 import * as path from "path";
+import { stat } from "fs";
+
+export enum MinerStatus{
+    waiting = "Waiting",
+    up = "Up",
+    down = "Down",
+    restarting = "Restarting"
+}
 
 export interface IMinerStatus {
-    isRunning: boolean;
+    status: string;
     upTime: number;
     card: INvidiaQuery;
 }
@@ -27,13 +36,13 @@ export class ClaymoreMiner {
         this._logger.info(`Card id ${_card.uuid}`);
     }
 
-    private _isRunning: boolean = false;
-
     private _startTime: number | undefined;
     private _endTime: number | undefined;
 
-    public get isRunning(): boolean {
-        return this._isRunning;
+    private _status: MinerStatus = MinerStatus.waiting;
+
+    public get status(): MinerStatus {
+        return this._status;
     }
 
     public get card(): INvidiaQuery {
@@ -68,6 +77,7 @@ export class ClaymoreMiner {
         const logPath = path.join(this._settings.logFolder, `Clay_GPU${this._card.index}_${Date.now()}.log`);
 
         const minerParams = Maybe.nullToMaybe(this._settings.claymoreLaunchParams.params)
+            .map(params => params.concat())
             .defaultTo<string[]>([]);
 
         minerParams.push(`-mport`, this._port.toString()); // management port
@@ -89,7 +99,6 @@ export class ClaymoreMiner {
             })
             .elseDo(() => minerParams.push("-erate", "0")); // do not send rate as we will have multiple miners on same name
 
-
         return minerParams;
     }
 
@@ -103,7 +112,7 @@ export class ClaymoreMiner {
 
     private constructStatus(): IMinerStatus {
         return {
-            isRunning: this._isRunning,
+            status: this._status,
             upTime: Maybe.nullToMaybe(this._startTime)
                 .combine(Maybe.nullToMaybe(this._endTime)
                     .orElse(Date.now()))
@@ -120,7 +129,7 @@ export class ClaymoreMiner {
             case "data":
                 console.log(`GPU ${this._card.index} (source: ${message.source}): ${message.data}`);
                 if(message.data.indexOf(`Remote management is enabled`) >= 0){
-                    this._isRunning = true;
+                    this._status = MinerStatus.up;
                     return this.constructStatus();
                 }
                 break;
@@ -131,7 +140,7 @@ export class ClaymoreMiner {
 
             case "exit":
                 console.log(`GPU ${this._card.index}: EXIT source: ${message.source}`);
-                this._isRunning = false;
+                this._status = MinerStatus.down;
                 return this.constructStatus();
 
             default:
