@@ -32,6 +32,8 @@ const startTime = Math.random() * 2500;
 setTimeout(() => {
     console.log(`Remote management is enabled on ${port}`);
 
+    let minerStartTime = Date.now();
+
     const server = net.createServer(socket => {
 
         socket.on("error", (err) => {
@@ -39,7 +41,9 @@ setTimeout(() => {
         });
 
         socket.on("data", (data: Buffer) => {
-            socket.write(`{"result": ["9.3 - ETH", "21", "182724;51;0", "30502;30457;30297;30481;30479;30505", "0;0;0", "off;off;off;off;off;off", "53;71;57;67;61;72;55;70;59;71;61;70", "eth-eu1.nanopool.org:9999", "0;0;0;0"]}`);
+            const minutes = Math.floor((Date.now() - minerStartTime) / 1000).toString();
+
+            socket.write(`{"result": ["10.0 - ETH", "${minutes}", "31398;591;0", "31398", "0;0;0", "off", "68;66", "eu1.ethermine.org:4444", "0;0;0;0"]}`);
         });
 
     });
