@@ -1,11 +1,12 @@
 
 import { INvidiaQuery, makeNvidiaQuery } from "./utils/nvidia-smi";
 import { MinerSettings } from "./utils/miner-settings";
-import { Observable } from "rxjs/Observable";
+import { Observable, Subject } from "rxjs";
 import { launchChild } from "./utils/rx-child-process";
 import { ClaymoreMiner, IMinerStatus, MinerStatus } from "./miner/claymoreMiner";
 import { Maybe } from "maybe-monad";
 import { displayMiners } from "./utils/display-helper";
+import { createRefreshStream } from "./utils/refresh-screen-util"
 
 import * as moment from "moment-duration-format";
 import * as fs from "fs";
@@ -44,6 +45,7 @@ function createMiners(ids: INvidiaQuery[]): Observable<IMinerStatus[]> {
     const miners = ids.map(card => new ClaymoreMiner(card, settings.startPort + card.index, settings));
 
     const queryStream = Observable.interval(settings.queryInterval)
+        .merge(createRefreshStream())
         .flatMap(() => createNvidiaQueryStream())
         .takeWhile(() => miners.some(miner => miner.status === MinerStatus.up))
         .share();
