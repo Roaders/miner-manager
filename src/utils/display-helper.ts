@@ -11,7 +11,7 @@ import { stat } from "fs";
 
 export function displayMiners(statuses: IMinerStatus[]) {
     const cardTable = new Table({
-        head: ["Id", "Status", "Power", "%", "Temp", "Time", "Rate", "Shares", "Hash/Watt"]
+        head: ["Id", "St.", "Power", "%", "Temp", "Time", "Rate", "Shares", "Eff."]
     }) as HorizontalTable;
 
     statuses.forEach(status => cardTable.push(buildColumns(status)));
@@ -35,7 +35,7 @@ function buildColumns(status: IMinerStatus): string[] {
             .combine(cardMaybe.map(details => details.fan_speed))
             .map(([temp,fan]) => `${temp} (${fan}%)`)
             .defaultTo("-"),
-        claymoreMaybe.map(details => details.runningTimeMs).map(x => formatDuration(x)).defaultTo("-"),
+        claymoreMaybe.map(details => details.runningTimeMs).map(ms => formatMinutes(ms)).defaultTo("-"),
         mineMaybe.map(details => details.rate).map(x => x.toString()).defaultTo("-"),
         mineMaybe.map(details => details.shares)
             .combine(mineMaybe.map(d => d.rejected), mineMaybe.map(d => d.invalid))
@@ -43,6 +43,12 @@ function buildColumns(status: IMinerStatus): string[] {
             .defaultTo("-"),
         Maybe.nullToMaybe(status.hashEfficiency).map(eff => eff.toFixed(3)).defaultTo("-")
     ];
+}
+
+function formatMinutes(ms: number): string{
+    const HMS = formatDuration(ms);
+
+    return HMS.substr(0,HMS.length - 3);
 }
 
 function displayPower(status: IMinerStatus): string {
