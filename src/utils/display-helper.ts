@@ -100,7 +100,7 @@ function constructTotalsRow(statuses: IMinerStatus[]): string[] {
         "", //  Percent
         "", //  Temp
         "", //  Time
-        totalRate.toString(3),
+        totalRate.toFixed(3),
         `${totalShares} (${totalRejected}/${totalInvalid})`,
         overallEfficiency.toFixed(3)
     ];
