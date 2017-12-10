@@ -45,6 +45,8 @@ export class ClaymoreMiner {
 
     private _claymoreService: ClaymoreService;
 
+    private _lastClaymoreStats: IClaymoreStats;
+
     private _startTime: number | undefined;
     private _endTime: number | undefined;
 
@@ -134,6 +136,12 @@ export class ClaymoreMiner {
     }
 
     private constructStatus(claymoreStats?: IClaymoreStats): IMinerStatus {
+        if(claymoreStats){
+            this._lastClaymoreStats = claymoreStats;
+        } else {
+            claymoreStats = this._lastClaymoreStats;
+        }
+
         const maybePower = Maybe.nullToMaybe(this._card.power_draw);
         const maybeHashRate = Maybe.nullToMaybe(claymoreStats)
             .map(stats => stats.ethHashes)
