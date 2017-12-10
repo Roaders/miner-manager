@@ -96,11 +96,11 @@ function constructTotalsRow(statuses: IMinerStatus[]): string[] {
     return [
         "", //  Id
         "", //  Status
-        totalPower.toString(),
+        totalPower.toFixed(0),
         "", //  Percent
         "", //  Temp
         "", //  Time
-        totalRate.toString(),
+        totalRate.toString(3),
         `${totalShares} (${totalRejected}/${totalInvalid})`,
         overallEfficiency.toFixed(3)
     ];
