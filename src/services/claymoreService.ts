@@ -43,8 +43,6 @@ export class ClaymoreService {
         hashSharesRejects: string, 
         pool: string): IClaymoreStats {
 
-            console.log(`pool: ${pool} hashSharesRejects: ${hashSharesRejects}`);
-
             const [hashString,sharesString,rejectsString] = hashSharesRejects.split(";");
 
             return {

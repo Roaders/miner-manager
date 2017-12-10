@@ -1,6 +1,7 @@
 
 import { MinerSettings, IApplicationLaunchParams } from "../utils/miner-settings";
 import { launchChild, childEvent } from "../utils/rx-child-process";
+import { ClaymoreService, IClaymoreStats } from "../services/claymoreService";
 
 import { Observable } from "rxjs/Observable";
 import { INvidiaQuery } from "../utils/nvidia-smi";
@@ -8,7 +9,6 @@ import { spawn } from "child_process";
 import { Maybe } from "maybe-monad";
 import * as winston from "winston";
 import * as path from "path";
-import { stat } from "fs";
 
 export enum MinerStatus{
     waiting = "Waiting",
@@ -20,7 +20,8 @@ export enum MinerStatus{
 export interface IMinerStatus {
     status: string;
     upTime: number;
-    card: INvidiaQuery;
+    cardDetails: INvidiaQuery;
+    claymoreDetails?: IClaymoreStats
 }
 
 export class ClaymoreMiner {
@@ -34,7 +35,11 @@ export class ClaymoreMiner {
         });
 
         this._logger.info(`Card id ${_card.uuid}`);
+
+        this._claymoreService = new ClaymoreService(this._port);
     }
+
+    private _claymoreService: ClaymoreService;
 
     private _startTime: number | undefined;
     private _endTime: number | undefined;
@@ -49,9 +54,15 @@ export class ClaymoreMiner {
         return this._card;
     }
 
-    public getStatusAsync(query: INvidiaQuery): Observable<IMinerStatus> {
-        this._card = query;
+    public getStatusAsync(query?: INvidiaQuery): Observable<IMinerStatus> {
+        if(query){
+            this._card = query;
+        }
 
+        if(this._status === MinerStatus.up){
+            return this._claymoreService.getMinerStats()
+                .map(stats => this.constructStatus(stats));
+        }
         return Observable.of(this.constructStatus());
     }
 
@@ -68,8 +79,9 @@ export class ClaymoreMiner {
             .do(message => this.storeMessages(message))
             .map(message => this.handleMessages(message))
             .filter(message => message != null)
-            .map<IMinerStatus | null, IMinerStatus>(m => m!))
-            .merge(this.getStatusAsync(this._card));
+            .map<childEvent | null, childEvent>(m => m!))
+            .flatMap(() => this.getStatusAsync())
+            .merge(this.getStatusAsync());
     }
 
     private buildMinerParams() {
@@ -110,7 +122,8 @@ export class ClaymoreMiner {
         }
     }
 
-    private constructStatus(): IMinerStatus {
+    private constructStatus(claymoreStats?: IClaymoreStats): IMinerStatus {
+
         return {
             status: this._status,
             upTime: Maybe.nullToMaybe(this._startTime)
@@ -118,11 +131,12 @@ export class ClaymoreMiner {
                     .orElse(Date.now()))
                 .map(([startTime, endTime]) => endTime - startTime)
                 .defaultTo(0),
-            card: this._card
+            cardDetails: this._card,
+            claymoreDetails: claymoreStats
         };
     }
 
-    private handleMessages(message: childEvent): IMinerStatus | null {
+    private handleMessages(message: childEvent): childEvent | null {
 
         switch (message.event) {
 
@@ -130,7 +144,7 @@ export class ClaymoreMiner {
                 console.log(`GPU ${this._card.index} (source: ${message.source}): ${message.data}`);
                 if(message.data.indexOf(`Remote management is enabled`) >= 0){
                     this._status = MinerStatus.up;
-                    return this.constructStatus();
+                    return message;
                 }
                 break;
 
@@ -141,7 +155,7 @@ export class ClaymoreMiner {
             case "exit":
                 console.log(`GPU ${this._card.index}: EXIT source: ${message.source}`);
                 this._status = MinerStatus.down;
-                return this.constructStatus();
+                return message;
 
             default:
                 console.log(`GPU ${this._card.index} event: ${message.event} source: ${message.source}`);

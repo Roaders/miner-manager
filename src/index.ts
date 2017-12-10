@@ -74,7 +74,7 @@ function getQueryForCard(card: INvidiaQuery, queries: INvidiaQuery[]): INvidiaQu
 
 function displayMiners(statuses: IMinerStatus[]) {
     const cardTable = new Table({
-        head: ["Id", "Status", "Power", "%", "Temp", "Time"]
+        head: ["Id", "Status", "Power", "%", "Temp", "Time", "Rate", "Shares"]
     }) as HorizontalTable;
 
     statuses.forEach(status => cardTable.push(buildColumns(status)));
@@ -83,19 +83,27 @@ function displayMiners(statuses: IMinerStatus[]) {
 }
 
 function buildColumns(status: IMinerStatus): string[] {
+    const cardMaybe = Maybe.nullToMaybe(status.cardDetails);
+    const mineMaybe = Maybe.nullToMaybe(status.claymoreDetails);
+
     return [
-        status.card.index.toString(),
+        status.cardDetails.index.toString(),
         status.status,
         displayPower(status),
-        Maybe.nullToMaybe(status.card.utilization_gpu).map(x => x.toString()).defaultTo("-"),
-        Maybe.nullToMaybe(status.card.temperature_gpu).map(x => x.toString()).defaultTo("-"),
-        formatDuration(status.upTime)
+        cardMaybe.map(details => details.utilization_gpu).map(x => x.toString()).defaultTo("-"),
+        cardMaybe.map(details => details.temperature_gpu).map(x => x.toString()).defaultTo("-"),
+        mineMaybe.map(details => details.runningTime).map(x => x.toString()).defaultTo("-"),
+        mineMaybe.map(details => details.hashrate).map(x => x.toString()).defaultTo("-"),
+        mineMaybe.map(details => details.shares)
+            .combine(mineMaybe.map(d => d.rejectedShared))
+            .map(([shares,rejected]) => `${shares} (${rejected})`)
+            .defaultTo("-")
     ];
 }
 
 function displayPower(status: IMinerStatus): string {
-    const powerDraw = Maybe.nullToMaybe(status.card.power_draw).map(p => p.toFixed());
-    const powerLimit = Maybe.nullToMaybe(status.card.power_limit).map(p => p.toFixed());
+    const powerDraw = Maybe.nullToMaybe(status.cardDetails.power_draw).map(p => p.toFixed());
+    const powerLimit = Maybe.nullToMaybe(status.cardDetails.power_limit).map(p => p.toFixed());
 
     return powerDraw
         .combine(powerLimit)
