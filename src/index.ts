@@ -34,7 +34,7 @@ createNvidiaQueryStream()
     );
 
 function createNvidiaQueryStream(): Observable<INvidiaQuery[]> {
-    return makeNvidiaQuery(settings.nividiSmiLaunchParams, ["power_draw", "power_limit", "utilization_gpu", "temperature_gpu"]);
+    return makeNvidiaQuery(settings.nividiSmiLaunchParams, ["power_draw", "power_limit", "utilization_gpu", "temperature_gpu", "fan_speed"]);
 }
 
 function createMiners(ids: INvidiaQuery[]): Observable<IMinerStatus[]> {

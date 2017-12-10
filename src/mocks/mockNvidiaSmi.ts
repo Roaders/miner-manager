@@ -33,6 +33,7 @@ function queryGpu(args: ICommandArgument[]) {
                     output += `100.00 W`;
                     break;
                 case "utilization.gpu":
+                case "fan.speed":
                     const utilization = (Math.random() * 30) + 70;
                     output += `${utilization.toFixed().toString()} %`;
                     break;

@@ -13,6 +13,7 @@ export interface INvidiaQuery {
     power_limit?: number;
     utilization_gpu?: number;
     temperature_gpu?: number;
+    fan_speed?: number;
 }
 
 export function makeNvidiaQuery(smiParams: IApplicationLaunchParams, queryParams?: (keyof INvidiaQuery)[]): Observable<INvidiaQuery[]> {
@@ -63,7 +64,8 @@ function parseQueryResult(input: IChildDataEvent, queryParams: (keyof INvidiaQue
                 value = parseInt(values[i]);
                 break;
             case "utilization_gpu":
-                value = parseUtilization(values[i]);
+            case "fan_speed":
+                value = parsePercentage(values[i]);
                 break;
             case "power_draw":
             case "power_limit":
@@ -79,7 +81,7 @@ function parseQueryResult(input: IChildDataEvent, queryParams: (keyof INvidiaQue
     return result;
 }
 
-function parseUtilization(input: string): number {
+function parsePercentage(input: string): number {
     const regularExpression = /(\d+) *\%/
 
     return Maybe.nullToMaybe(input)
