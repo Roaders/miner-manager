@@ -12,6 +12,7 @@ import * as path from "path";
 
 export enum MinerStatus{
     waiting = "Waiting",
+    launching = "Launching",
     up = "Up",
     down = "Down",
     restarting = "Restarting"
@@ -59,8 +60,13 @@ export class ClaymoreMiner {
             this._card = query;
         }
 
-        if(this._status === MinerStatus.up){
+        if(this._status === MinerStatus.up || this._status === MinerStatus.launching){
             return this._claymoreService.getMinerStats()
+                .do(() => this._status = MinerStatus.up)
+                .catch(error => {
+                    console.error(`Error getting claymore status: ${error.toString()}`);
+                    return Observable.of(undefined);
+                })
                 .map(stats => this.constructStatus(stats));
         }
         return Observable.of(this.constructStatus());
@@ -71,17 +77,19 @@ export class ClaymoreMiner {
     public launch(): Observable<IMinerStatus> {
         this._startTime = Date.now();
 
+        this._status = MinerStatus.launching;
+
         const minerParams = this.buildMinerParams();
 
         this._logger.info(`Claymore miner for index: ${this._card.index}, uuid: ${this._card.uuid} and port: ${this._port}`);
 
         return Observable.defer(() => launchChild(() => spawn(this._settings.claymoreLaunchParams.path, minerParams))
+            .do(() => {}, undefined, () => console.log(`Child stream complete for GPU ${this._card.index}`))
             .do(message => this.storeMessages(message))
             .map(message => this.handleMessages(message))
             .filter(message => message != null)
-            .map<childEvent | null, childEvent>(m => m!))
-            .flatMap(() => this.getStatusAsync())
-            .merge(this.getStatusAsync());
+            .map<IMinerStatus | null, IMinerStatus>(m => m!))
+            .merge(Observable.of(this.constructStatus()));
     }
 
     private buildMinerParams() {
@@ -123,7 +131,6 @@ export class ClaymoreMiner {
     }
 
     private constructStatus(claymoreStats?: IClaymoreStats): IMinerStatus {
-
         return {
             status: this._status,
             upTime: Maybe.nullToMaybe(this._startTime)
@@ -136,7 +143,7 @@ export class ClaymoreMiner {
         };
     }
 
-    private handleMessages(message: childEvent): childEvent | null {
+    private handleMessages(message: childEvent): IMinerStatus | null {
 
         switch (message.event) {
 
@@ -144,7 +151,7 @@ export class ClaymoreMiner {
                 console.log(`GPU ${this._card.index} (source: ${message.source}): ${message.data}`);
                 if(message.data.indexOf(`Remote management is enabled`) >= 0){
                     this._status = MinerStatus.up;
-                    return message;
+                    return this.constructStatus();
                 }
                 break;
 
@@ -155,7 +162,7 @@ export class ClaymoreMiner {
             case "exit":
                 console.log(`GPU ${this._card.index}: EXIT source: ${message.source}`);
                 this._status = MinerStatus.down;
-                return message;
+                return this.constructStatus();
 
             default:
                 console.log(`GPU ${this._card.index} event: ${message.event} source: ${message.source}`);

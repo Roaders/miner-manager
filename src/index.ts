@@ -63,7 +63,7 @@ function createMinerStream(miner: ClaymoreMiner, queries: Observable<INvidiaQuer
         .filter(query => query != undefined)
         .map<INvidiaQuery | undefined, INvidiaQuery>(q => q!)
         .flatMap(query => miner.getStatusAsync(query))
-        .takeWhile(() => miner.status === MinerStatus.up);
+        .takeWhile(() => miner.status !== MinerStatus.down);
 
     return minerUpdates.merge(queryUpdates);
 }

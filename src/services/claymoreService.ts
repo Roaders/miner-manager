@@ -9,7 +9,7 @@ export interface IClaymoreStats {
     pool: string
 }
 
-export interface IHashStats{
+export interface IHashStats {
     rate: number;
     shares: number;
     rejected: number;
@@ -38,40 +38,46 @@ export class ClaymoreService {
             client.destroy();
         });
 
+        client.on('error', error => {
+            subject.error(error);
+            subject.complete();
+            client.destroy();
+        });
+
         return subject
             .map(d => JSON.parse(d))
             .map<any, string[]>(r => r.result)
-            .map<string[], IClaymoreStats>(([version, runningTime, hashes,,altHashes,,, pool, invalidShares]) => this.createStats(version,runningTime,hashes,altHashes,pool,invalidShares));
+            .map<string[], IClaymoreStats>(([version, runningTime, hashes, , altHashes, , , pool, invalidShares]) => this.createStats(version, runningTime, hashes, altHashes, pool, invalidShares));
     }
 
-    private createStats(version: string, 
-        runningTime: string, 
-        hashSharesRejects: string, 
-        altHashSharesRejects: string, 
+    private createStats(version: string,
+        runningTime: string,
+        hashSharesRejects: string,
+        altHashSharesRejects: string,
         pool: string,
         invalidSharesComposite: string): IClaymoreStats {
 
-            const [invalidShares,poolSwitches,invalidAltShares,altPoolSwitches] = invalidSharesComposite.split(";");
+        const [invalidShares, poolSwitches, invalidAltShares, altPoolSwitches] = invalidSharesComposite.split(";");
 
-            return {
-                version,
-                pool,
-                runningTimeMs: parseInt(runningTime) * 60 * 1000, // convert to ms
-                ethHashes: this.createHashStats(hashSharesRejects, invalidShares, poolSwitches),
-                altHashStats: this.createHashStats(altHashSharesRejects, invalidAltShares, altPoolSwitches)
-            };
+        return {
+            version,
+            pool,
+            runningTimeMs: parseInt(runningTime) * 60 * 1000, // convert to ms
+            ethHashes: this.createHashStats(hashSharesRejects, invalidShares, poolSwitches),
+            altHashStats: this.createHashStats(altHashSharesRejects, invalidAltShares, altPoolSwitches)
+        };
     }
 
-    private createHashStats(hashDetails: string, invalid: string, switches: string): IHashStats | undefined{
-        const [hashString,sharesString,rejectsString] = hashDetails.split(";");
+    private createHashStats(hashDetails: string, invalid: string, switches: string): IHashStats | undefined {
+        const [hashString, sharesString, rejectsString] = hashDetails.split(";");
 
-        if(hashString === "0"){
+        if (hashString === "0") {
             return undefined;
         }
 
         return {
             invalid: parseInt(invalid),
-            rate: parseInt(hashString),
+            rate: parseInt(hashString) / 1000,
             shares: parseInt(sharesString),
             rejected: parseInt(rejectsString),
             poolSwitches: parseInt(switches)
