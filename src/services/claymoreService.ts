@@ -4,10 +4,17 @@ import { Socket } from "net";
 export interface IClaymoreStats {
     version: string,
     runningTimeMs: number,
-    hashrate: number,
-    shares: number,
-    rejectedShared: number,
+    ethHashes?: IHashStats,
+    altHashStats?: IHashStats,
     pool: string
+}
+
+export interface IHashStats{
+    rate: number;
+    shares: number;
+    rejected: number;
+    invalid: number;
+    poolSwitches: number;
 }
 
 export class ClaymoreService {
@@ -34,23 +41,40 @@ export class ClaymoreService {
         return subject
             .map(d => JSON.parse(d))
             .map<any, string[]>(r => r.result)
-            .map<string[], IClaymoreStats>(([version, runningTime, hashSharesRejects,,,,, pool]) => this.createStats(version,runningTime,hashSharesRejects,pool));
+            .map<string[], IClaymoreStats>(([version, runningTime, hashes,,altHashes,,, pool, invalidShares]) => this.createStats(version,runningTime,hashes,altHashes,pool,invalidShares));
     }
 
     private createStats(version: string, 
         runningTime: string, 
         hashSharesRejects: string, 
-        pool: string): IClaymoreStats {
+        altHashSharesRejects: string, 
+        pool: string,
+        invalidSharesComposite: string): IClaymoreStats {
 
-            const [hashString,sharesString,rejectsString] = hashSharesRejects.split(";");
+            const [invalidShares,poolSwitches,invalidAltShares,altPoolSwitches] = invalidSharesComposite.split(";");
 
             return {
                 version,
                 pool,
                 runningTimeMs: parseInt(runningTime) * 60 * 1000, // convert to ms
-                hashrate: parseInt(hashString) / 1000,
-                shares: parseInt(sharesString),
-                rejectedShared: parseInt(rejectsString)
+                ethHashes: this.createHashStats(hashSharesRejects, invalidShares, poolSwitches),
+                altHashStats: this.createHashStats(altHashSharesRejects, invalidAltShares, altPoolSwitches)
             };
+    }
+
+    private createHashStats(hashDetails: string, invalid: string, switches: string): IHashStats | undefined{
+        const [hashString,sharesString,rejectsString] = hashDetails.split(";");
+
+        if(hashString === "0"){
+            return undefined;
+        }
+
+        return {
+            invalid: parseInt(invalid),
+            rate: parseInt(hashString),
+            shares: parseInt(sharesString),
+            rejected: parseInt(rejectsString),
+            poolSwitches: parseInt(switches)
+        }
     }
 }

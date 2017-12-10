@@ -84,7 +84,8 @@ function displayMiners(statuses: IMinerStatus[]) {
 
 function buildColumns(status: IMinerStatus): string[] {
     const cardMaybe = Maybe.nullToMaybe(status.cardDetails);
-    const mineMaybe = Maybe.nullToMaybe(status.claymoreDetails);
+    const claymoreMaybe = Maybe.nullToMaybe(status.claymoreDetails);
+    const mineMaybe = claymoreMaybe.map(x => x.ethHashes);
 
     return [
         status.cardDetails.index.toString(),
@@ -92,11 +93,11 @@ function buildColumns(status: IMinerStatus): string[] {
         displayPower(status),
         cardMaybe.map(details => details.utilization_gpu).map(x => x.toString()).defaultTo("-"),
         cardMaybe.map(details => details.temperature_gpu).map(x => x.toString()).defaultTo("-"),
-        mineMaybe.map(details => details.runningTimeMs).map(x => formatDuration(x)).defaultTo("-"),
-        mineMaybe.map(details => details.hashrate).map(x => x.toString()).defaultTo("-"),
+        claymoreMaybe.map(details => details.runningTimeMs).map(x => formatDuration(x)).defaultTo("-"),
+        mineMaybe.map(details => details.rate).map(x => x.toString()).defaultTo("-"),
         mineMaybe.map(details => details.shares)
-            .combine(mineMaybe.map(d => d.rejectedShared))
-            .map(([shares, rejected]) => `${shares} (${rejected})`)
+            .combine(mineMaybe.map(d => d.rejected),mineMaybe.map(d => d.invalid))
+            .map(([shares, rejected, invalid]) => `${shares} (${rejected}/${invalid})`)
             .defaultTo("-")
     ];
 }
