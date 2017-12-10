@@ -25,14 +25,14 @@ if (!settings || !settings.allSettingsDefined) {
 try {
     fs.mkdirSync(settings.logFolder);
 }
-catch (e) {}
+catch (e) { }
 
 createNvidiaQueryStream()
     .flatMap(createMiners)
     .sampleTime(1000)
     .subscribe(
-        statuses => displayMiners(statuses),
-        error => console.log(`Error: ${error}`)
+    statuses => displayMiners(statuses),
+    error => console.log(`Error: ${error}`)
     );
 
 function createNvidiaQueryStream(): Observable<INvidiaQuery[]> {
@@ -43,7 +43,7 @@ function createMiners(ids: INvidiaQuery[]): Observable<IMinerStatus[]> {
 
     console.log(`${ids.length} cards found. Launching miners...`)
 
-    const miners = ids.map( card => new ClaymoreMiner(card, settings.startPort + card.index, settings));
+    const miners = ids.map(card => new ClaymoreMiner(card, settings.startPort + card.index, settings));
 
     const queryStream = Observable.interval(settings.queryInterval)
         .flatMap(() => createNvidiaQueryStream())
@@ -59,16 +59,16 @@ function createMinerStream(miner: ClaymoreMiner, queries: Observable<INvidiaQuer
     const minerUpdates = miner.launch();
 
     const queryUpdates = queries
-        .map(queries => getQueryForCard(miner.card,queries))
+        .map(queries => getQueryForCard(miner.card, queries))
         .filter(query => query != undefined)
-        .map<INvidiaQuery | undefined,INvidiaQuery>(q => q!)
+        .map<INvidiaQuery | undefined, INvidiaQuery>(q => q!)
         .flatMap(query => miner.getStatusAsync(query))
         .takeWhile(() => miner.status === MinerStatus.up);
 
     return minerUpdates.merge(queryUpdates);
 }
 
-function getQueryForCard(card: INvidiaQuery, queries: INvidiaQuery[]): INvidiaQuery | undefined{
+function getQueryForCard(card: INvidiaQuery, queries: INvidiaQuery[]): INvidiaQuery | undefined {
     return queries.filter(query => query.uuid === card.uuid)[0];
 }
 
@@ -96,7 +96,7 @@ function buildColumns(status: IMinerStatus): string[] {
         mineMaybe.map(details => details.hashrate).map(x => x.toString()).defaultTo("-"),
         mineMaybe.map(details => details.shares)
             .combine(mineMaybe.map(d => d.rejectedShared))
-            .map(([shares,rejected]) => `${shares} (${rejected})`)
+            .map(([shares, rejected]) => `${shares} (${rejected})`)
             .defaultTo("-")
     ];
 }

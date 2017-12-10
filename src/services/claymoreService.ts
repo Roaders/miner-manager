@@ -22,13 +22,12 @@ export class ClaymoreService {
         const request = { "id": 0, "jsonrpc": "2.0", "method": "miner_getstat1" };
 
         client.connect(this._port, this._host, () => {
-            console.log(`Successfully connected to ${this._host}:${this._port}`);
-
             client.write(JSON.stringify(request));
         });
 
         client.on('data', data => {
             subject.next(data.toString());
+            subject.complete();
             client.destroy();
         });
 
