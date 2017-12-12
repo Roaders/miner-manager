@@ -5,7 +5,8 @@ import { ClaymoreService, IClaymoreStats } from "../services/claymoreService";
 
 import { Observable } from "rxjs/Observable";
 import { INvidiaQuery } from "../utils/nvidia-smi";
-import { spawn, SpawnOptions } from "child_process";
+import { NvidiaSettings } from "../utils/nvidia-settings";
+import { spawn } from "child_process";
 import { Maybe } from "maybe-monad";
 import * as winston from "winston";
 import * as path from "path";
@@ -29,8 +30,6 @@ export interface IMinerStatus {
     hashEfficiency?: number;
 }
 
-type SettingsAttribute = "GPUGraphicsClockOffset" | "GPUMemoryTransferRateOffset";
-
 export class ClaymoreMiner {
 
     constructor(private _card: INvidiaQuery, private _port: number, private _settings: MinerSettings) {
@@ -44,7 +43,10 @@ export class ClaymoreMiner {
         this._logger.info(`Card id ${_card.uuid}`);
 
         this._claymoreService = new ClaymoreService(this._port);
+        this._nvidiaSettings = new NvidiaSettings(this._settings);
     }
+
+    private _nvidiaSettings: NvidiaSettings;
 
     private _claymoreService: ClaymoreService;
 
@@ -90,8 +92,8 @@ export class ClaymoreMiner {
         this._logger.info(`Claymore miner for index: ${this._card.index}, uuid: ${this._card.uuid} and port: ${this._port}`);
 
         const claymoreLaunch = Observable.defer(() => launchChild(() => spawn(this._settings.claymoreLaunchParams.path, minerParams)));
-        const coreQuery = this.querySettings("GPUGraphicsClockOffset").do(v => this._graphicsOffset = v);
-        const memoryQuery = this.querySettings("GPUMemoryTransferRateOffset").do(v => this._memoryOffset = v);
+        const coreQuery = this._nvidiaSettings.querySettings(this._card.index, "GPUGraphicsClockOffset").do(v => this._graphicsOffset = v);
+        const memoryQuery = this._nvidiaSettings.querySettings(this._card.index, "GPUMemoryTransferRateOffset").do(v => this._memoryOffset = v);
 
         return Observable.forkJoin(coreQuery, memoryQuery)
             .flatMap(() => claymoreLaunch)
@@ -100,23 +102,6 @@ export class ClaymoreMiner {
             .filter(message => message != null)
             .map<IMinerStatus | null, IMinerStatus>(m => m!)
             .merge(Observable.of(this.constructStatus()));
-    }
-
-    private querySettings(attribute: SettingsAttribute): Observable<number> {
-        const options: SpawnOptions = {
-            env: {
-                DISPLAY: ":0",
-                XAUTHORITY: "/var/run/lightdm/root/:0"
-            }
-        }
-
-        const args = ["-t", "-q", `[gpu:${this._card.index}]/${attribute}[3]`];
-
-        return Observable.defer(() => launchChild(() => spawn("nvidia-settings", args, options)))
-            .filter(event => event.event === "data")
-            .map<childEvent, IChildDataEvent>(event => event as IChildDataEvent)
-            .map(event => parseFloat(event.data))
-            .do(value => console.log(`GPU ${this._card.index} DATA received from ${attribute} query: ${value}`))
     }
 
     private buildMinerParams() {

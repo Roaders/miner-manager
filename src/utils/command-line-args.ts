@@ -6,12 +6,16 @@ export interface ICommandLineValues{
     logFolder: string;
     nvidiaSmiPath: string;
     nvidiaSmiParams?: string[];
+    nvidiaSettingsPath: string;
+    nvidiaSettingsParams?: string[];
     claymorePath: string;
     claymoreParams?: string[];
     minerBaseName?: string;
     poolAddress?: string;
     walletAddress?: string;
     queryInterval: number;
+    query: boolean;
+    identify?: number
 }
 
 interface OptionWithKeyOf extends OptionDefinition{
@@ -34,6 +38,13 @@ export const commandArgs: OptionWithKeyOf[] = [
         multiple: true
     },
     {
+        name: "nvidiaSettingsPath"
+    },
+    {
+        name: "nvidiaSettingsParams",
+        multiple: true
+    },
+    {
         name: "claymorePath"
     },
     {
@@ -52,6 +63,14 @@ export const commandArgs: OptionWithKeyOf[] = [
     {
         name: "queryInterval",
         defaultValue: 60000,
-        type: value => parseInt(value)
+        type: Number
+    },
+    {
+        name: "identify",
+        type: Number
+    },
+    {
+        name: "query",
+        type: Boolean
     }
 ];

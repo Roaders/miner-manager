@@ -7,6 +7,7 @@ import { ClaymoreMiner, IMinerStatus, MinerStatus } from "./miner/claymoreMiner"
 import { Maybe } from "maybe-monad";
 import { displayMiners } from "./utils/display-helper";
 import { createRefreshStream } from "./utils/refresh-screen-util"
+import { NvidiaSettings } from "./utils/nvidia-settings"
 
 import * as moment from "moment-duration-format";
 import * as fs from "fs";
@@ -14,37 +15,61 @@ import * as fs from "fs";
 import { stat } from "fs";
 import { start } from "repl";
 
-const settings = new MinerSettings();
+const minerSettings = new MinerSettings();
 
-if (!settings || !settings.allSettingsDefined) {
-    console.error(`settings not defined. Refer to help (view help with -h)`);
-    process.exit();
+if(minerSettings.identify != null){
+    const gpuId = minerSettings.identify;
+    console.log(`Spinning up fan for GPU ${gpuId} for 20 seconds`);
+
+    const nvidiaSettings = new NvidiaSettings(minerSettings);
+
+    nvidiaSettings.assignValue(gpuId,"GPUFanControlState","gpu","1")
+        .flatMap(() => nvidiaSettings.assignValue(gpuId,"GPUTargetFanSpeed","fan","100"))
+        .flatMap(() => createNvidiaQueryStream())
+        .delay(20 * 1000)
+        .flatMap(() => nvidiaSettings.assignValue(gpuId,"GPUFanControlState","gpu","0"))
+        .do(() => console.log(`Fan speed should return to normal`))
+        .flatMap(() => createNvidiaQueryStream())
+        .subscribe();
+
+} else if(minerSettings.query){
+    createNvidiaQueryStream().subscribe();
+} else {
+    startMining();
 }
 
-try {
-    fs.mkdirSync(settings.logFolder);
-}
-catch (e) { }
+function startMining() {
 
-createNvidiaQueryStream()
-    .flatMap(createMiners)
-    .sampleTime(1000)
-    .subscribe(
-    statuses => displayMiners(statuses),
-    error => console.log(`Error: ${error}`)
-    );
+    if (!minerSettings.allSettingsDefined) {
+        console.error(`settings not defined. Refer to help (view help with -h)`);
+        process.exit();
+    }
+
+    try {
+        fs.mkdirSync(minerSettings.logFolder);
+    }
+    catch (e) { }
+
+    createNvidiaQueryStream()
+        .flatMap(createMiners)
+        .sampleTime(1000)
+        .subscribe(
+        statuses => displayMiners(statuses),
+        error => console.log(`Error: ${error}`)
+        );
+}
 
 function createNvidiaQueryStream(): Observable<INvidiaQuery[]> {
-    return makeNvidiaQuery(settings.nividiSmiLaunchParams, ["power_draw", "power_limit", "utilization_gpu", "temperature_gpu", "fan_speed"]);
+    return makeNvidiaQuery(minerSettings.nividiSmiLaunchParams, ["power_draw", "power_limit", "utilization_gpu", "temperature_gpu", "fan_speed"]);
 }
 
 function createMiners(ids: INvidiaQuery[]): Observable<IMinerStatus[]> {
 
     console.log(`${ids.length} cards found. Launching miners...`)
 
-    const miners = ids.map(card => new ClaymoreMiner(card, settings.startPort + card.index, settings));
+    const miners = ids.map(card => new ClaymoreMiner(card, minerSettings.startPort + card.index, minerSettings));
 
-    const queryStream = Observable.interval(settings.queryInterval)
+    const queryStream = Observable.interval(minerSettings.queryInterval)
         .merge(createRefreshStream())
         .flatMap(() => createNvidiaQueryStream())
         .takeWhile(() => miners.some(miner => miner.status === MinerStatus.up))

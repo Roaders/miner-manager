@@ -23,17 +23,23 @@ export class MinerSettings {
             .combine(claymorePathMaybe)
             .isNothing;
 
-        this._startPort = startPortMaybe.value;
-        this._logFolder = logFolderMaybe.value;
-        this._claymorePath = claymorePathMaybe.value;
+        if (this._settingsValid) {
+            this._startPort = startPortMaybe.value;
+            this._logFolder = logFolderMaybe.value;
+            this._claymorePath = claymorePathMaybe.value;
+        }
 
         this._nvidiaSmiPath = Maybe.nullToMaybe(commandLineValues.nvidiaSmiPath).defaultTo("nvidia-smi");
         this._nvidiaSmiParams = commandLineValues.nvidiaSmiParams;
+        this._nvidiaSettingsPath = Maybe.nullToMaybe(commandLineValues.nvidiaSettingsPath).defaultTo("nvidia-settings");
+        this._nvidiaSettingsParams = commandLineValues.nvidiaSettingsParams;
         this._claymoreParams = commandLineValues.claymoreParams;
         this._minerBaseName = commandLineValues.minerBaseName;
         this._poolAddress = commandLineValues.poolAddress;
         this._walletAddress = commandLineValues.walletAddress;
         this._queryInterval = commandLineValues.queryInterval;
+        this._query = commandLineValues.query;
+        this._identify = commandLineValues.identify;
     }
 
     private _settingsValid: boolean;
@@ -49,6 +55,16 @@ export class MinerSettings {
         return {
             path: this._nvidiaSmiPath,
             params: this._nvidiaSmiParams
+        }
+    }
+
+    private _nvidiaSettingsPath: string;
+    private _nvidiaSettingsParams?: string[];
+
+    public get nividiSettingsLaunchParams(): IApplicationLaunchParams {
+        return {
+            path: this._nvidiaSettingsPath,
+            params: this._nvidiaSettingsParams
         }
     }
 
@@ -96,5 +112,17 @@ export class MinerSettings {
 
     public get logFolder(): string {
         return path.join(process.cwd(), this._logFolder);
+    }
+
+    private _query: boolean;
+
+    public get query(): boolean {
+        return this._query;
+    }
+
+    private _identify?: number;
+
+    public get identify(): number | undefined {
+        return this._identify;
     }
 }
