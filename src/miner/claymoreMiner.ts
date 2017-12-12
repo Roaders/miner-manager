@@ -94,8 +94,9 @@ export class ClaymoreMiner {
         const claymoreLaunch = Observable.defer(() => launchChild(() => spawn(this._settings.claymoreLaunchParams.path, minerParams)));
         const coreQuery = this._nvidiaSettings.querySettings(this._card.index, "GPUGraphicsClockOffset").do(v => this._graphicsOffset = v);
         const memoryQuery = this._nvidiaSettings.querySettings(this._card.index, "GPUMemoryTransferRateOffset").do(v => this._memoryOffset = v);
+        const setFanState = this._nvidiaSettings.assignValue(this._card.index, "GPUFanControlState", "gpu", "0");
 
-        return Observable.forkJoin(coreQuery, memoryQuery)
+        return Observable.forkJoin(coreQuery, memoryQuery, setFanState)
             .flatMap(() => claymoreLaunch)
             .do(message => this.storeMessages(message))
             .map(message => this.handleMessages(message))

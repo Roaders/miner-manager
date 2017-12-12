@@ -95,6 +95,7 @@ function constructTotalsRow(statuses: IMinerStatus[]): string[] {
         "", //  Id
         "", //  Status
         totalPower.toFixed(0),
+        "", //  Clocks
         "", //  Percent
         "", //  Temp
         "", //  Time

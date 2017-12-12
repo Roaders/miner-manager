@@ -15,7 +15,8 @@ export interface ICommandLineValues{
     walletAddress?: string;
     queryInterval: number;
     query: boolean;
-    identify?: number
+    maxFans: boolean;
+    identify?: number;
 }
 
 interface OptionWithKeyOf extends OptionDefinition{
@@ -71,6 +72,10 @@ export const commandArgs: OptionWithKeyOf[] = [
     },
     {
         name: "query",
+        type: Boolean
+    },
+    {
+        name: "maxFans",
         type: Boolean
     }
 ];

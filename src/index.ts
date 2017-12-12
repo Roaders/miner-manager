@@ -16,26 +16,40 @@ import { stat } from "fs";
 import { start } from "repl";
 
 const minerSettings = new MinerSettings();
+const nvidiaSettings = new NvidiaSettings(minerSettings);
 
 if(minerSettings.identify != null){
     const gpuId = minerSettings.identify;
-    console.log(`Spinning up fan for GPU ${gpuId} for 20 seconds`);
+    console.log(`Spinning up fan for GPU ${gpuId} for 20 seconds, all other fans to 0`);
 
-    const nvidiaSettings = new NvidiaSettings(minerSettings);
-
-    nvidiaSettings.assignValue(gpuId,"GPUFanControlState","gpu","1")
-        .flatMap(() => nvidiaSettings.assignValue(gpuId,"GPUTargetFanSpeed","fan","100"))
+    createNvidiaQueryStream()
+        .flatMap(cards => Observable.forkJoin(cards.map(card => setFanSpeed(card.index,card.index === gpuId ? 100 : 0))))
         .flatMap(() => createNvidiaQueryStream())
         .delay(20 * 1000)
-        .flatMap(() => nvidiaSettings.assignValue(gpuId,"GPUFanControlState","gpu","0"))
+        .flatMap(cards => Observable.forkJoin(cards.map(card => nvidiaSettings.assignValue(card.index,"GPUFanControlState","gpu","0"))))
         .do(() => console.log(`Fan speed should return to normal`))
         .flatMap(() => createNvidiaQueryStream())
+        .subscribe();
+} else if(minerSettings.maxFans){
+
+    console.log(`Settings all fans to 100%`);
+
+    createNvidiaQueryStream()
+        .map(cards => cards.map(card => setFanSpeed(card.index,100)))
+        .flatMap(assignments => Observable.forkJoin(assignments))
         .subscribe();
 
 } else if(minerSettings.query){
     createNvidiaQueryStream().subscribe();
 } else {
     startMining();
+}
+
+function setFanSpeed(cardIndex: number, value: number){
+    console.log(`setting fan speed for ${cardIndex} to ${value}`);
+
+    return nvidiaSettings.assignValue(cardIndex,"GPUFanControlState","gpu","1")
+        .flatMap(() => nvidiaSettings.assignValue(cardIndex,"GPUTargetFanSpeed","fan",value.toString()));
 }
 
 function startMining() {

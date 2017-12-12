@@ -39,6 +39,7 @@ export class MinerSettings {
         this._walletAddress = commandLineValues.walletAddress;
         this._queryInterval = commandLineValues.queryInterval;
         this._query = commandLineValues.query;
+        this._maxFans = commandLineValues.maxFans;
         this._identify = commandLineValues.identify;
     }
 
@@ -118,6 +119,12 @@ export class MinerSettings {
 
     public get query(): boolean {
         return this._query;
+    }
+    
+    private _maxFans: boolean;
+
+    public get maxFans(): boolean {
+        return this._maxFans;
     }
 
     private _identify?: number;
