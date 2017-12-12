@@ -11,7 +11,7 @@ import { stat } from "fs";
 
 export function displayMiners(statuses: IMinerStatus[]) {
     const cardTable = new Table({
-        head: ["Id", "St.", "Power", "%", "Temp", "Time", "Rate", "Shares", "Eff."]
+        head: ["Id", "St.", "Pwr.", "Clocks", "%", "Temp", "Time", "Rate", "Shr.", "Eff."]
     }) as HorizontalTable;
 
     statuses.forEach(status => cardTable.push(buildColumns(status)));
@@ -29,17 +29,17 @@ function buildColumns(status: IMinerStatus): string[] {
     return [
         status.cardDetails.index.toString(),
         status.status,
-        displayPower(status),
+        Maybe.nullToMaybe(status.cardDetails.power_draw).map(p => p.toFixed()).defaultTo("-"),
+        `${status.graphicsOffset}/${status.memoryOffset}`,
         cardMaybe.map(details => details.utilization_gpu).map(x => x.toString()).defaultTo("-"),
         cardMaybe.map(details => details.temperature_gpu)
-            .combine(cardMaybe.map(details => details.fan_speed))
-            .map(([temp,fan]) => `${temp} (${fan}%)`)
+            .map(temp => temp.toString())
             .defaultTo("-"),
         claymoreMaybe.map(details => details.runningTimeMs).map(ms => formatMinutes(ms)).defaultTo("-"),
         mineMaybe.map(details => details.rate).map(x => x.toString()).defaultTo("-"),
         mineMaybe.map(details => details.shares)
             .combine(mineMaybe.map(d => d.rejected), mineMaybe.map(d => d.invalid))
-            .map(([shares, rejected, invalid]) => `${shares} (${rejected}/${invalid})`)
+            .map(([shares, rejected, invalid]) => `${shares} ${rejected}/${invalid}`)
             .defaultTo("-"),
         Maybe.nullToMaybe(status.hashEfficiency).map(eff => eff.toFixed(3)).defaultTo("-")
     ];
@@ -49,17 +49,6 @@ function formatMinutes(ms: number): string{
     const HMS = formatDuration(ms);
 
     return HMS.substr(0,HMS.length - 3);
-}
-
-function displayPower(status: IMinerStatus): string {
-    const powerDraw = Maybe.nullToMaybe(status.cardDetails.power_draw).map(p => p.toFixed());
-    const powerLimit = Maybe.nullToMaybe(status.cardDetails.power_limit).map(p => p.toFixed());
-
-    return powerDraw
-        .combine(powerLimit)
-        .map(([draw, limit]) => `${draw}/${limit}`)
-        .or(powerDraw)
-        .defaultTo(`-`);
 }
 
 function constructTotalsRow(statuses: IMinerStatus[]): string[] {

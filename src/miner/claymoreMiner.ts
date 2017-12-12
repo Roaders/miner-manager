@@ -1,11 +1,11 @@
 
 import { MinerSettings, IApplicationLaunchParams } from "../utils/miner-settings";
-import { launchChild, childEvent } from "../utils/rx-child-process";
+import { launchChild, childEvent, IChildDataEvent } from "../utils/rx-child-process";
 import { ClaymoreService, IClaymoreStats } from "../services/claymoreService";
 
 import { Observable } from "rxjs/Observable";
 import { INvidiaQuery } from "../utils/nvidia-smi";
-import { spawn } from "child_process";
+import { spawn, SpawnOptions } from "child_process";
 import { Maybe } from "maybe-monad";
 import * as winston from "winston";
 import * as path from "path";
@@ -22,11 +22,14 @@ export enum MinerStatus {
 
 export interface IMinerStatus {
     status: string;
-    upTime: number;
+    memoryOffset: number;
+    graphicsOffset: number;
     cardDetails: INvidiaQuery;
     claymoreDetails?: IClaymoreStats;
     hashEfficiency?: number;
 }
+
+type SettingsAttribute = "GPUGraphicsClockOffset" | "GPUMemoryTransferRateOffset";
 
 export class ClaymoreMiner {
 
@@ -47,8 +50,8 @@ export class ClaymoreMiner {
 
     private _lastClaymoreStats: IClaymoreStats;
 
-    private _startTime: number | undefined;
-    private _endTime: number | undefined;
+    private _memoryOffset: number | undefined;
+    private _graphicsOffset: number | undefined;
 
     private _status: MinerStatus = MinerStatus.waiting;
 
@@ -80,21 +83,40 @@ export class ClaymoreMiner {
     private _logger: winston.LoggerInstance;
 
     public launch(): Observable<IMinerStatus> {
-        this._startTime = Date.now();
-
         this._status = MinerStatus.launching;
 
         const minerParams = this.buildMinerParams();
 
         this._logger.info(`Claymore miner for index: ${this._card.index}, uuid: ${this._card.uuid} and port: ${this._port}`);
 
-        return Observable.defer(() => launchChild(() => spawn(this._settings.claymoreLaunchParams.path, minerParams))
-            .do(() => { }, undefined, () => console.log(`Child stream complete for GPU ${this._card.index}`))
+        const claymoreLaunch = Observable.defer(() => launchChild(() => spawn(this._settings.claymoreLaunchParams.path, minerParams)));
+        const coreQuery = this.querySettings("GPUGraphicsClockOffset").do(v => this._graphicsOffset = v);
+        const memoryQuery = this.querySettings("GPUMemoryTransferRateOffset").do(v => this._memoryOffset = v);
+
+        return Observable.forkJoin(coreQuery, memoryQuery)
+            .flatMap(() => claymoreLaunch)
             .do(message => this.storeMessages(message))
             .map(message => this.handleMessages(message))
             .filter(message => message != null)
-            .map<IMinerStatus | null, IMinerStatus>(m => m!))
+            .map<IMinerStatus | null, IMinerStatus>(m => m!)
             .merge(Observable.of(this.constructStatus()));
+    }
+
+    private querySettings(attribute: SettingsAttribute): Observable<number> {
+        const options: SpawnOptions = {
+            env: {
+                DISPLAY: ":0",
+                XAUTHORITY: "/var/run/lightdm/root/:0"
+            }
+        }
+
+        const args = ["-t", "-q", `[gpu:${this._card.index}]/${attribute}[3]`];
+
+        return Observable.defer(() => launchChild(() => spawn("nvidia-settings", args, options)))
+            .filter(event => event.event === "data")
+            .map<childEvent, IChildDataEvent>(event => event as IChildDataEvent)
+            .map(event => parseFloat(event.data))
+            .do(value => console.log(`GPU ${this._card.index} DATA received from ${attribute} query: ${value}`))
     }
 
     private buildMinerParams() {
@@ -136,7 +158,7 @@ export class ClaymoreMiner {
     }
 
     private constructStatus(claymoreStats?: IClaymoreStats): IMinerStatus {
-        if(claymoreStats){
+        if (claymoreStats) {
             this._lastClaymoreStats = claymoreStats;
         } else {
             claymoreStats = this._lastClaymoreStats;
@@ -149,15 +171,12 @@ export class ClaymoreMiner {
 
         return {
             status: this._status,
-            upTime: Maybe.nullToMaybe(this._startTime)
-                .combine(Maybe.nullToMaybe(this._endTime)
-                    .orElse(Date.now()))
-                .map(([startTime, endTime]) => endTime - startTime)
-                .defaultTo(0),
+            memoryOffset: Maybe.nullToMaybe(this._memoryOffset).defaultTo(NaN),
+            graphicsOffset: Maybe.nullToMaybe(this._graphicsOffset).defaultTo(NaN),
             cardDetails: this._card,
             claymoreDetails: claymoreStats,
             hashEfficiency: maybeHashRate.combine(maybePower)
-                .map(([rate,power]) => rate/power)
+                .map(([rate, power]) => rate / power)
                 .defaultTo(undefined)
         };
     }
