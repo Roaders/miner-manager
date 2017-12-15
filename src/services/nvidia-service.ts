@@ -40,11 +40,24 @@ export class NvidiaService {
     }
 
     public assignAttributeValue(cardIndex: number, attribute: SettingsAttribute, device: Device = "gpu", value: string): Observable<string[]> {
+        let attributeString: string;
+
+        switch(attribute){
+            case "GPUMemoryTransferRateOffset":
+                attributeString = `${attribute}[3]`;
+                break;
+
+            default:
+                attributeString = attribute;
+        }
+
         const args = Maybe.nullToMaybe(this._settings.nividiSettingsLaunchParams.params)
             .map(params => params.concat())
             .orElse([])
-            .do(params => params.push("-a", `[${device}:${cardIndex}]/${attribute}=${value}`))
+            .do(params => params.push("-a", `[${device}:${cardIndex}]/${attributeString}=${value}`))
             .value;
+
+        console.log(`setting attribute: ${args}`);
 
         return Observable.defer(() => launchChild(() => spawn(this._settings.nividiSettingsLaunchParams.path, args, this.spawnOptions)))
             .filter(event => event.event === "data")
