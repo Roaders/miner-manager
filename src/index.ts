@@ -5,8 +5,8 @@ import { Observable, Subject } from "rxjs";
 import { launchChild } from "./utils/rx-child-process";
 import { ClaymoreMiner, IMinerStatus, MinerStatus } from "./miner/claymoreMiner";
 import { Maybe } from "maybe-monad";
-import { displayMiners } from "./utils/display-helper";
-import { createRefreshStream } from "./utils/refresh-screen-util"
+import { displayMiners, DisplayMode } from "./utils/display-helper";
+import { createKeypressStream } from "./utils/key-press-util"
 import { NvidiaSettings } from "./utils/nvidia-settings"
 
 import * as moment from "moment-duration-format";
@@ -17,6 +17,8 @@ import { start } from "repl";
 
 const minerSettings = new MinerSettings();
 const nvidiaSettings = new NvidiaSettings(minerSettings);
+
+let displayMode = DisplayMode.Full;
 
 if(minerSettings.identify != null){
     const gpuId = minerSettings.identify;
@@ -53,7 +55,6 @@ function setFanSpeed(cardIndex: number, value: number){
 }
 
 function startMining() {
-
     if (!minerSettings.allSettingsDefined) {
         console.error(`settings not defined. Refer to help (view help with -h)`);
         process.exit();
@@ -64,11 +65,15 @@ function startMining() {
     }
     catch (e) { }
 
+    console.log(`Starting to Mine...`);
+    console.log(`hit 's' to refresh stats`);
+    console.log(`hit 'd' to toggle display (compact or full)`);
+
     createNvidiaQueryStream()
         .flatMap(createMiners)
         .sampleTime(1000)
         .subscribe(
-        statuses => displayMiners(statuses),
+        statuses => displayMiners(statuses, displayMode),
         error => console.log(`Error: ${error}`)
         );
 }
@@ -84,14 +89,26 @@ function createMiners(ids: INvidiaQuery[]): Observable<IMinerStatus[]> {
     const miners = ids.map(card => new ClaymoreMiner(card, minerSettings.startPort + card.index, minerSettings));
 
     const queryStream = Observable.interval(minerSettings.queryInterval)
-        .merge(createRefreshStream())
-        .flatMap(() => createNvidiaQueryStream())
+        .merge(keyPressStream())
+        .map(() => createNvidiaQueryStream())
+        .mergeAll(1)
         .takeWhile(() => miners.some(miner => miner.status === MinerStatus.up))
         .share();
 
     const minerUpdates = Observable.combineLatest(miners.map(miner => createMinerStream(miner, queryStream)))
 
     return minerUpdates;
+}
+
+function keyPressStream(){
+    return createKeypressStream()
+        .do(key => {
+            if(key.name === "d"){
+                toggleDisplayMode();
+                console.log(`Toggling Display Mode to: ${displayMode}`);
+            }
+        })
+        .filter(key => key.name === "s" || key.name === "d");
 }
 
 function createMinerStream(miner: ClaymoreMiner, queries: Observable<INvidiaQuery[]>): Observable<IMinerStatus> {
@@ -105,4 +122,12 @@ function createMinerStream(miner: ClaymoreMiner, queries: Observable<INvidiaQuer
         .takeWhile(() => miner.status !== MinerStatus.down);
 
     return minerUpdates.merge(queryUpdates);
+}
+
+function toggleDisplayMode(){
+    if(displayMode === DisplayMode.Compact){
+        displayMode = DisplayMode.Full;
+    } else {
+        displayMode = DisplayMode.Compact;
+    }
 }
