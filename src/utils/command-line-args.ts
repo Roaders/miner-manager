@@ -3,6 +3,7 @@ import { OptionDefinition } from "command-line-args";
 
 export interface ICommandLineValues{
     startPort: number;
+    initialClock?: number;
     logFolder: string;
     nvidiaSmiPath: string;
     nvidiaSmiParams?: string[];
@@ -82,5 +83,9 @@ export const commandArgs: OptionWithKeyOf[] = [
     {
         name: "resetFans",
         type: Boolean
+    },
+    {
+        name: "initialClock",
+        type: Number
     }
 ];

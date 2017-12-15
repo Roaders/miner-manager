@@ -1,23 +1,30 @@
 
 interface ICommandArgument {
     name: string;
-    value: string[]
+    value?: string[]
 }
 
-function mockNvidiaSmi(){
+function mockNvidiaSmi() {
     function formatArgument(input: string): ICommandArgument {
+        if (input.indexOf("=") < 0) {
+            return { name: input };
+        }
+
         const [name, valueString] = input.split("=");
         const value = valueString.split(",");
         return { name, value };
     }
-    
+
     function queryGpu(args: ICommandArgument[]) {
         const query: ICommandArgument | undefined = args.filter(c => c.name === "--query-gpu")[0];
-    
+        const format: ICommandArgument = args.filter(c => c.name === "--format")[0];
+
+        const requestedParams = query.value ? query.value : [];
+
         for (let index = 0; index < 8; index++) {
             let output = "";
-    
-            query.value.forEach(value => {
+
+            requestedParams.forEach(value => {
                 if (output != "") output += ", ";
                 switch (value) {
                     case "index":
@@ -33,6 +40,9 @@ function mockNvidiaSmi(){
                     case "power.limit":
                         output += `100.00 W`;
                         break;
+                    case "power.min_limit":
+                        output += `105.00 W`
+                        break;
                     case "utilization.gpu":
                     case "fan.speed":
                         const utilization = (Math.random() * 30) + 70;
@@ -44,21 +54,33 @@ function mockNvidiaSmi(){
                         break;
                 }
             })
-    
+
             console.log(output);
         }
     }
-    
+
+    let confirmation = "";
+
     const args = process.argv.slice(2)
         .map(formatArgument);
-    
-    args.forEach(arg => {
+
+    for (let index: number = 0; index < args.length; index++) {
+        const arg = args[index];
+
         switch (arg.name) {
             case "--query-gpu":
-                queryGpu(args);
+                return queryGpu(args);
+
+            case "-pl":
+            case "-pm":
+            case "-i":
+                confirmation += confirmation === "" ? confirmation : ", ";
+                confirmation += `${arg.name}: ${args[++index].name}`
                 break;
         }
-    });
+    };
+
+    console.log(`nvidia-smi update: ${confirmation}`);
 }
 
 mockNvidiaSmi();

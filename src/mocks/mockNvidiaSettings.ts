@@ -16,6 +16,10 @@ function mockNvidiaSettings() {
         console.log(output);
     }
 
+    function assign(params: string){
+        console.log(`Assigning: ${params}`);
+    }
+
     const args = process.argv.slice(2);
 
     for(let argIndex = 0; argIndex < args.length; argIndex++){
@@ -24,6 +28,10 @@ function mockNvidiaSettings() {
         switch(arg){
             case "-q":
                 return query(args[++argIndex]);
+        }
+        switch(arg){
+            case "-a":
+                return assign(args[++argIndex]);
         }
     }
 }

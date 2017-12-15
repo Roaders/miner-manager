@@ -1,5 +1,4 @@
 
-import { INvidiaQuery, makeNvidiaQuery } from "./utils/nvidia-smi";
 import { MinerSettings } from "./utils/miner-settings";
 import { Observable, Subject } from "rxjs";
 import { launchChild } from "./utils/rx-child-process";
@@ -7,29 +6,30 @@ import { ClaymoreMiner, IMinerStatus, MinerStatus } from "./miner/claymoreMiner"
 import { Maybe } from "maybe-monad";
 import { displayMiners, DisplayMode } from "./utils/display-helper";
 import { createKeypressStream } from "./utils/key-press-util"
-import { NvidiaSettings } from "./utils/nvidia-settings"
+import { NvidiaService, INvidiaQuery } from "./services/nvidia-service"
 
 import * as moment from "moment-duration-format";
 import * as fs from "fs";
 
 import { stat } from "fs";
 import { start } from "repl";
+import { settings } from "cluster";
 
 const minerSettings = new MinerSettings();
-const nvidiaSettings = new NvidiaSettings(minerSettings);
+const nvidiaService = new NvidiaService(minerSettings);
 
-let displayMode = DisplayMode.Full;
+let displayMode = DisplayMode.Compact;
 
 if (minerSettings.identify != null) {
     const gpuId = minerSettings.identify;
     console.log(`Spinning up fan for GPU ${gpuId} for 20 seconds, all other fans to 0`);
 
     createNvidiaQueryStream()
-        .flatMap(cards => Observable.forkJoin(cards.map(card => setFanSpeed(card.index, card.index === gpuId ? 100 : 0))))
+        .flatMap(cards => Observable.forkJoin(cards.map(card => nvidiaService.setFanSpeed(card.index, card.index === gpuId ? 100 : 0))))
         .flatMap(() => createNvidiaQueryStream())
         .do(() => console.log(`Waiting 20 seconds to reset fans...`))
         .delay(20 * 1000)
-        .flatMap(cards => Observable.forkJoin(cards.map(card => nvidiaSettings.assignValue(card.index, "GPUFanControlState", "gpu", "0"))))
+        .flatMap(cards => Observable.forkJoin(cards.map(card => nvidiaService.setFanSpeed(card.index))))
         .do(() => console.log(`Fan speed should return to normal`))
         .flatMap(() => createNvidiaQueryStream())
         .subscribe();
@@ -38,7 +38,7 @@ if (minerSettings.identify != null) {
     console.log(`Settings all fans to 100%`);
 
     createNvidiaQueryStream()
-        .map(cards => cards.map(card => setFanSpeed(card.index, 100)))
+        .map(cards => cards.map(card => nvidiaService.setFanSpeed(card.index, 100)))
         .flatMap(assignments => Observable.forkJoin(assignments))
         .subscribe();
 
@@ -47,28 +47,15 @@ if (minerSettings.identify != null) {
     console.log(`Resetting all fans`);
 
     createNvidiaQueryStream()
-        .map(cards => cards.map(card => setFanSpeed(card.index)))
+        .map(cards => cards.map(card => nvidiaService.setFanSpeed(card.index)))
         .flatMap(assignments => Observable.forkJoin(assignments))
+        .do(() => console.log(`forkjoin value`), undefined, () => console.log(`Forkjoin complete`))
         .subscribe();
 
 } else if (minerSettings.query) {
     createNvidiaQueryStream().subscribe();
 } else {
     startMining();
-}
-
-function setFanSpeed(cardIndex: number, value?: number) {
-    if(value){
-        console.log(`Setting fan speed for ${cardIndex} to ${value}`);
-    } else {
-        console.log(`Resetting fan speed for ${cardIndex}`);
-    }
-
-    const state = value == null ? "0" : "1";
-
-    return nvidiaSettings.assignValue(cardIndex, "GPUFanControlState", "gpu", state)
-        .filter(() => value != null)
-        .flatMap(() => nvidiaSettings.assignValue(cardIndex, "GPUTargetFanSpeed", "fan", value!.toString()));
 }
 
 function startMining() {
@@ -87,6 +74,7 @@ function startMining() {
     console.log(`hit 'd' to toggle display (compact or full)`);
 
     createNvidiaQueryStream()
+        .flatMap(initialSettings)
         .flatMap(createMiners)
         .sampleTime(1000)
         .subscribe(
@@ -95,8 +83,22 @@ function startMining() {
         );
 }
 
+function initialSettings(cards: INvidiaQuery[]): Observable<INvidiaQuery[]>{
+    let returnObservable = Observable.forkJoin(cards.map(card => nvidiaService.setFanSpeed(card.index)))
+        .flatMap(() => Observable.forkJoin(cards.map(card => nvidiaService.setPowerLimit(card, 100))))
+
+    if(minerSettings.initialClock != null){
+        const clockSetting = minerSettings.initialClock.toString();
+        const observables = cards.map(card => nvidiaService.assignAttributeValue(card.index,"GPUMemoryTransferRateOffset","gpu", clockSetting));
+        returnObservable = returnObservable.flatMap(() => Observable.forkJoin(observables))
+    }
+
+    return returnObservable
+        .map(() => cards);
+}
+
 function createNvidiaQueryStream(): Observable<INvidiaQuery[]> {
-    return makeNvidiaQuery(minerSettings.nividiSmiLaunchParams, ["power_draw", "power_limit", "utilization_gpu", "temperature_gpu", "fan_speed"]);
+    return nvidiaService.query(["power_draw", "power_limit", "power_min_limit", "utilization_gpu", "temperature_gpu", "fan_speed"]);
 }
 
 function createMiners(ids: INvidiaQuery[]): Observable<IMinerStatus[]> {

@@ -42,6 +42,7 @@ export class MinerSettings {
         this._maxFans = commandLineValues.maxFans;
         this._resetFans = commandLineValues.resetFans;
         this._identify = commandLineValues.identify;
+        this._initialClock = commandLineValues.initialClock;
     }
 
     private _settingsValid: boolean;
@@ -86,6 +87,12 @@ export class MinerSettings {
         return this._startPort;
     }
 
+    private _initialClock: number | undefined;
+
+    public get initialClock(): number | undefined {
+        return this._initialClock;
+    }
+
     private _queryInterval: number;
 
     public get queryInterval(): number {
@@ -121,13 +128,13 @@ export class MinerSettings {
     public get query(): boolean {
         return this._query;
     }
-    
+
     private _maxFans: boolean;
 
     public get maxFans(): boolean {
         return this._maxFans;
     }
-    
+
     private _resetFans: boolean;
 
     public get resetFans(): boolean {

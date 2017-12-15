@@ -19,7 +19,8 @@
                 "--claymorePath=node",
                 "--claymoreParams=dist/mocks/mockClaymore.js",
                 "--minerBaseName=MockAndy",
-                "--queryInterval=7000"
+                "--queryInterval=7000",
+                "--initialClock=1500"
             ],
             "sourceMaps": true,
             "console": "integratedTerminal",

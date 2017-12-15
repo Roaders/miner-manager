@@ -2,8 +2,8 @@
 import { HorizontalTable } from "cli-table2";
 import { IMinerStatus } from "../miner/claymoreMiner";
 import { Maybe, IMaybe } from "maybe-monad";
-import { INvidiaQuery } from "./nvidia-smi";
-import { IHashStats } from "../services/claymoreService"
+import { INvidiaQuery } from "../services/nvidia-service";
+import { IHashStats } from "../services/claymore-service"
 
 import formatDuration = require("format-duration");
 
@@ -19,7 +19,7 @@ export enum DisplayMode {
 const fullHeaders = ["Id", "Status", "Power", "Clocks", "%", "Temp", "Time", "Rate", "Shares", "Efficiency"];
 const compactHeaders = ["Id", "St.", "Pwr.", "Clocks", "%", "Temp", "Time", "Rate", "Shr.", "Eff."];
 
-export function displayMiners(statuses: IMinerStatus[], mode: DisplayMode = DisplayMode.Full) {
+export function displayMiners(statuses: IMinerStatus[], mode: DisplayMode = DisplayMode.Compact) {
     const cardTable = new Table({
         head: mode === DisplayMode.Full ? fullHeaders : compactHeaders
     }) as HorizontalTable;

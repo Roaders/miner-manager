@@ -1,11 +1,10 @@
 
 import { MinerSettings, IApplicationLaunchParams } from "../utils/miner-settings";
 import { launchChild, childEvent, IChildDataEvent } from "../utils/rx-child-process";
-import { ClaymoreService, IClaymoreStats } from "../services/claymoreService";
 
 import { Observable } from "rxjs/Observable";
-import { INvidiaQuery } from "../utils/nvidia-smi";
-import { NvidiaSettings } from "../utils/nvidia-settings";
+import { NvidiaService, INvidiaQuery } from "../services/nvidia-service";
+import { IClaymoreStats, ClaymoreService } from "../services/claymore-service";
 import { spawn } from "child_process";
 import { Maybe } from "maybe-monad";
 import * as winston from "winston";
@@ -43,10 +42,10 @@ export class ClaymoreMiner {
         this._logger.info(`Card id ${_card.uuid}`);
 
         this._claymoreService = new ClaymoreService(this._port);
-        this._nvidiaSettings = new NvidiaSettings(this._settings);
+        this._nvidiaSettings = new NvidiaService(this._settings);
     }
 
-    private _nvidiaSettings: NvidiaSettings;
+    private _nvidiaSettings: NvidiaService;
 
     private _claymoreService: ClaymoreService;
 
@@ -92,11 +91,10 @@ export class ClaymoreMiner {
         this._logger.info(`Claymore miner for index: ${this._card.index}, uuid: ${this._card.uuid} and port: ${this._port}`);
 
         const claymoreLaunch = Observable.defer(() => launchChild(() => spawn(this._settings.claymoreLaunchParams.path, minerParams)));
-        const coreQuery = this._nvidiaSettings.querySettings(this._card.index, "GPUGraphicsClockOffset").do(v => this._graphicsOffset = v);
-        const memoryQuery = this._nvidiaSettings.querySettings(this._card.index, "GPUMemoryTransferRateOffset").do(v => this._memoryOffset = v);
-        const setFanState = this._nvidiaSettings.assignValue(this._card.index, "GPUFanControlState", "gpu", "0");
+        const coreQuery = this._nvidiaSettings.queryAttributeValue(this._card.index, "GPUGraphicsClockOffset").do(v => this._graphicsOffset = v);
+        const memoryQuery = this._nvidiaSettings.queryAttributeValue(this._card.index, "GPUMemoryTransferRateOffset").do(v => this._memoryOffset = v);
 
-        return Observable.forkJoin(coreQuery, memoryQuery, setFanState)
+        return Observable.forkJoin(coreQuery, memoryQuery)
             .flatMap(() => claymoreLaunch)
             .do(message => this.storeMessages(message))
             .map(message => this.handleMessages(message))
