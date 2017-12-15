@@ -40,6 +40,7 @@ export class MinerSettings {
         this._queryInterval = commandLineValues.queryInterval;
         this._query = commandLineValues.query;
         this._maxFans = commandLineValues.maxFans;
+        this._resetFans = commandLineValues.resetFans;
         this._identify = commandLineValues.identify;
     }
 
@@ -125,6 +126,12 @@ export class MinerSettings {
 
     public get maxFans(): boolean {
         return this._maxFans;
+    }
+    
+    private _resetFans: boolean;
+
+    public get resetFans(): boolean {
+        return this._resetFans;
     }
 
     private _identify?: number;

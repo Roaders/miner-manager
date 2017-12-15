@@ -16,6 +16,7 @@ export interface ICommandLineValues{
     queryInterval: number;
     query: boolean;
     maxFans: boolean;
+    resetFans: boolean;
     identify?: number;
 }
 
@@ -76,6 +77,10 @@ export const commandArgs: OptionWithKeyOf[] = [
     },
     {
         name: "maxFans",
+        type: Boolean
+    },
+    {
+        name: "resetFans",
         type: Boolean
     }
 ];

@@ -121,6 +121,40 @@
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": "buildTypescript"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Max Fans",
+            "program": "${workspaceFolder}/dist/index.js",
+            "args": [
+                "--maxFans",
+                "--nvidiaSettingsPath=node",
+                "--nvidiaSettingsParams=dist/mocks/mockNvidiaSettings.js",
+                "--nvidiaSmiPath=node",
+                "--nvidiaSmiParams=dist/mocks/mockNvidiaSmi.js"
+            ],
+            "sourceMaps": true,
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "buildTypescript"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Reset Fans",
+            "program": "${workspaceFolder}/dist/index.js",
+            "args": [
+                "--resetFans",
+                "--nvidiaSettingsPath=node",
+                "--nvidiaSettingsParams=dist/mocks/mockNvidiaSettings.js",
+                "--nvidiaSmiPath=node",
+                "--nvidiaSmiParams=dist/mocks/mockNvidiaSmi.js"
+            ],
+            "sourceMaps": true,
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "buildTypescript"
         }
     ]
 }

@@ -20,38 +20,54 @@ const nvidiaSettings = new NvidiaSettings(minerSettings);
 
 let displayMode = DisplayMode.Full;
 
-if(minerSettings.identify != null){
+if (minerSettings.identify != null) {
     const gpuId = minerSettings.identify;
     console.log(`Spinning up fan for GPU ${gpuId} for 20 seconds, all other fans to 0`);
 
     createNvidiaQueryStream()
-        .flatMap(cards => Observable.forkJoin(cards.map(card => setFanSpeed(card.index,card.index === gpuId ? 100 : 0))))
+        .flatMap(cards => Observable.forkJoin(cards.map(card => setFanSpeed(card.index, card.index === gpuId ? 100 : 0))))
         .flatMap(() => createNvidiaQueryStream())
         .delay(20 * 1000)
-        .flatMap(cards => Observable.forkJoin(cards.map(card => nvidiaSettings.assignValue(card.index,"GPUFanControlState","gpu","0"))))
+        .flatMap(cards => Observable.forkJoin(cards.map(card => nvidiaSettings.assignValue(card.index, "GPUFanControlState", "gpu", "0"))))
         .do(() => console.log(`Fan speed should return to normal`))
         .flatMap(() => createNvidiaQueryStream())
         .subscribe();
-} else if(minerSettings.maxFans){
+} else if (minerSettings.maxFans) {
 
     console.log(`Settings all fans to 100%`);
 
     createNvidiaQueryStream()
-        .map(cards => cards.map(card => setFanSpeed(card.index,100)))
+        .map(cards => cards.map(card => setFanSpeed(card.index, 100)))
         .flatMap(assignments => Observable.forkJoin(assignments))
         .subscribe();
 
-} else if(minerSettings.query){
+} else if (minerSettings.resetFans) {
+
+    console.log(`Resetting all fans`);
+
+    createNvidiaQueryStream()
+        .map(cards => cards.map(card => setFanSpeed(card.index)))
+        .flatMap(assignments => Observable.forkJoin(assignments))
+        .subscribe();
+
+} else if (minerSettings.query) {
     createNvidiaQueryStream().subscribe();
 } else {
     startMining();
 }
 
-function setFanSpeed(cardIndex: number, value: number){
-    console.log(`setting fan speed for ${cardIndex} to ${value}`);
+function setFanSpeed(cardIndex: number, value?: number) {
+    if(value){
+        console.log(`Setting fan speed for ${cardIndex} to ${value}`);
+    } else {
+        console.log(`Resetting fan speed for ${cardIndex}`);
+    }
 
-    return nvidiaSettings.assignValue(cardIndex,"GPUFanControlState","gpu","1")
-        .flatMap(() => nvidiaSettings.assignValue(cardIndex,"GPUTargetFanSpeed","fan",value.toString()));
+    const state = value == null ? "0" : "1";
+
+    return nvidiaSettings.assignValue(cardIndex, "GPUFanControlState", "gpu", state)
+        .filter(() => value != null)
+        .flatMap(() => nvidiaSettings.assignValue(cardIndex, "GPUTargetFanSpeed", "fan", value!.toString()));
 }
 
 function startMining() {
@@ -100,10 +116,10 @@ function createMiners(ids: INvidiaQuery[]): Observable<IMinerStatus[]> {
     return minerUpdates;
 }
 
-function keyPressStream(){
+function keyPressStream() {
     return createKeypressStream()
         .do(key => {
-            if(key.name === "d"){
+            if (key.name === "d") {
                 toggleDisplayMode();
                 console.log(`Toggling Display Mode to: ${displayMode}`);
             }
@@ -124,8 +140,8 @@ function createMinerStream(miner: ClaymoreMiner, queries: Observable<INvidiaQuer
     return minerUpdates.merge(queryUpdates);
 }
 
-function toggleDisplayMode(){
-    if(displayMode === DisplayMode.Compact){
+function toggleDisplayMode() {
+    if (displayMode === DisplayMode.Compact) {
         displayMode = DisplayMode.Full;
     } else {
         displayMode = DisplayMode.Compact;
