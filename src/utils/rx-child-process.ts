@@ -8,110 +8,120 @@ export type sourceType = "stdout" | "stderr" | "childprocess";
 export type eventName = "close" | "data" | "end" | "readable" | "error";
 
 export interface IChildEvent {
-  source: sourceType;
-  event: "close" | "end" | "readable" | "exit";
+    source: sourceType;
+    event: "close" | "end" | "readable";
+}
+
+export interface IChildExitEvent {
+    source: sourceType;
+    event: "exit";
+    code: number;
 }
 
 export interface IChildDataEvent {
-  source: sourceType;
-  event: "data";
-  data: string;
+    source: sourceType;
+    event: "data";
+    data: string;
 }
 
 export interface IChildErrorEvent {
-  source: sourceType;
-  event: "error";
-  error: Error;
+    source: sourceType;
+    event: "error";
+    error: Error;
 }
 
-export type childEvent = IChildEvent | IChildDataEvent | IChildErrorEvent;
+export type childEvent = IChildEvent | IChildDataEvent | IChildErrorEvent | IChildExitEvent;
 
 export function launchChild(launchCommand: () => ChildProcess): Observable<childEvent> {
 
-  return Observable.defer(() => {
-    const exitSubject = new Subject();
-    const childStream = new Subject<IChildEvent>();
-    const childProcess = launchCommand();
+    return Observable.defer(() => {
+        const exitSubject = new Subject();
+        const childStream = new Subject<IChildEvent | IChildExitEvent>();
+        const childProcess = launchCommand();
 
-    const stoutStream = setupEventHandling(childProcess.stdout, "stdout");
-    const sterrStream = setupEventHandling(childProcess.stderr, "stderr");
+        const stoutStream = setupEventHandling(childProcess.stdout, "stdout");
+        const sterrStream = setupEventHandling(childProcess.stderr, "stderr");
 
-    childProcess.on('exit', (code) => {
-      childStream.next({source: "childprocess", event: "exit"});
-      exitSubject.next();
-      exitSubject.complete();
+        childProcess.on('exit', (code) => {
+            childStream.next({ source: "childprocess", event: "exit", code });
+            if (code !== 0) {
+                childStream.error(new Error(`Child process exited with return code ${code}`))
+            }
+
+            exitSubject.next();
+            exitSubject.complete();
+        });
+
+        return childStream
+            .merge(stoutStream)
+            .merge(sterrStream)
+            .takeUntil(exitSubject);
     });
-
-    return childStream
-      .merge(stoutStream)
-      .merge(sterrStream)
-      .takeUntil(exitSubject);
-  });
 }
 
 function setupEventHandling(stream: Readable, source: sourceType): Observable<childEvent> {
 
-  const closeStream = fromStream<void>(stream, "close").map<void,IChildEvent>(() => ({source, event: "close"}));
-  const endStream = fromStream<void>(stream, "end").map<void,IChildEvent>(() => ({source, event: "end"}));
-  const readableStream = fromStream<void>(stream, "readable").map<void,IChildEvent>(() => ({source, event: "readable"}));
+    const closeStream = fromStream<void>(stream, "close").map<void, IChildEvent>(() => ({ source, event: "close" }));
+    const endStream = fromStream<void>(stream, "end").map<void, IChildEvent>(() => ({ source, event: "end" }));
+    const readableStream = fromStream<void>(stream, "readable").map<void, IChildEvent>(() => ({ source, event: "readable" }));
 
-  const errorStream = fromStream<Error>(stream, "error").map<Error,IChildErrorEvent>(error => ({source, event: "error", error}));
-  const dataStream = fromStream<string | Buffer>(stream, "data")
-    .map<string | Buffer,string>(data => data.toString())
-    .scan((currentLine, data) => trimPreviousLine(currentLine) + data, "") // join data together removing complete lines at start
-    .filter(data => hasLineBreakAtEnd(data)) // only emit lines that are complete (have line break at end)
-    .flatMap(data => Observable.from(data.split(/[\n\r]+/))) // split multiple lines in one message into separate lines
-    .filter(line => line != null && line != "") // remove empty lines
-    .map<string,IChildDataEvent>(data => ({source, event: "data", data}));
+    const errorStream = fromStream<Error>(stream, "error").map<Error, IChildErrorEvent>(error => ({ source, event: "error", error }));
+    const dataStream = fromStream<string | Buffer>(stream, "data")
+        .map<string | Buffer, string>(data => data.toString())
+        .scan((currentLine, data) => trimPreviousLine(currentLine) + data, "") // join data together removing complete lines at start
+        .filter(data => hasLineBreakAtEnd(data)) // only emit lines that are complete (have line break at end)
+        .flatMap(data => Observable.from(data.split(/[\n\r]+/))) // split multiple lines in one message into separate lines
+        .filter(line => line != null && line != "") // remove empty lines
+        .map<string, IChildDataEvent>(data => ({ source, event: "data", data }));
 
     return dataStream
-      .merge(errorStream,readableStream,closeStream,endStream)
-      .takeUntil(endStream);
-} 
-
-function hasLineBreakAtEnd(line: string): boolean{
-  const newLineIndex = line.lastIndexOf("\n");
-  const carriageReturnIndex = line.lastIndexOf("\r");
-
-  return line.length -1 === newLineIndex || line.length -1 === carriageReturnIndex;
+        .merge(errorStream, readableStream, closeStream, endStream)
+        .takeUntil(endStream);
 }
 
-function trimPreviousLine(line: string): string{
-  const newLineIndex = line.lastIndexOf("\n");
-  const carriageReturnIndex = line.lastIndexOf("\r");
+function hasLineBreakAtEnd(line: string): boolean {
+    const newLineIndex = line.lastIndexOf("\n");
+    const carriageReturnIndex = line.lastIndexOf("\r");
 
-  const lineEnd = Math.max(newLineIndex, carriageReturnIndex);
-
-  return lineEnd >= 0 ? line.substr(lineEnd + 1) : line;
+    return line.length - 1 === newLineIndex || line.length - 1 === carriageReturnIndex;
 }
 
-function fromStream<T>(stream: Readable, event: eventName): Observable<T>{
-  const subject = new Subject<T>();
+function trimPreviousLine(line: string): string {
+    const newLineIndex = line.lastIndexOf("\n");
+    const carriageReturnIndex = line.lastIndexOf("\r");
 
-  stream.on(event, payload => subject.next(payload));
+    const lineEnd = Math.max(newLineIndex, carriageReturnIndex);
 
-  return subject
+    return lineEnd >= 0 ? line.substr(lineEnd + 1) : line;
+}
+
+function fromStream<T>(stream: Readable, event: eventName): Observable<T> {
+    const subject = new Subject<T>();
+
+    stream.on(event, payload => subject.next(payload));
+
+    return subject
 }
 
 function handleEvent(source: sourceType, event: eventName, subject: Subject<childEvent>) {
-  subject.next(<IChildEvent>{ source, event });
+    subject.next(<IChildEvent>{ source, event });
 
-  switch (event) {
-    case "end":
-      subject.complete();
-  }
+    switch (event) {
+        case "end":
+            subject.complete();
+    }
 }
 
 function handleData(source: sourceType, subject: Subject<childEvent>, data: string | Buffer) {
-  if (data instanceof Buffer) {
-    data = data.toString();
-  }
+    if (data instanceof Buffer) {
+        data = data.toString();
+    }
 
-  data.split(/[\n\r]+/)
-    .filter(line => line != null && line != "")
-    .forEach(line => subject.next({ source, event: "data", data: line }));
+    data.split(/[\n\r]+/)
+        .filter(line => line != null && line != "")
+        .forEach(line => subject.next({ source, event: "data", data: line }));
 }
 
 function handleError(source: sourceType, subject: Subject<childEvent>, error: Error) {
-  subject.next({ source, event: "error", error });
+    subject.next({ source, event: "error", error });
 }
