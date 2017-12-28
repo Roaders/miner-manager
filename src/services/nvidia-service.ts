@@ -27,13 +27,13 @@ export class NvidiaService {
     }
 
     public queryAttributeValue(cardIndex: number, attribute: SettingsAttribute, device: Device = "gpu"): Observable<number> {
-        const args = Maybe.nullToMaybe(this._settings.nividiSettingsLaunchParams.params)
+        const args = Maybe.nullToMaybe(this._settings.nividiaSettingsLaunchParams.params)
             .map(params => params.concat())
             .orElse([])
             .do(params => params.push("-t", "-q", `[${device}:${cardIndex}]/${attribute}`))
             .value;
 
-        return Observable.defer(() => launchChild(() => spawn(this._settings.nividiSettingsLaunchParams.path, args, this.spawnOptions)))
+        return Observable.defer(() => launchChild(() => spawn(this._settings.nividiaSettingsLaunchParams.path, args, this.spawnOptions)))
             .filter(event => event.event === "data")
             .map<childEvent, IChildDataEvent>(event => event as IChildDataEvent)
             .map(event => parseFloat(event.data));
@@ -42,7 +42,7 @@ export class NvidiaService {
     public assignAttributeValue(cardIndex: number, attribute: SettingsAttribute, device: Device = "gpu", value: string): Observable<string[]> {
         let attributeString: string;
 
-        switch(attribute){
+        switch (attribute) {
             case "GPUMemoryTransferRateOffset":
                 attributeString = `${attribute}[3]`;
                 break;
@@ -51,7 +51,7 @@ export class NvidiaService {
                 attributeString = attribute;
         }
 
-        const args = Maybe.nullToMaybe(this._settings.nividiSettingsLaunchParams.params)
+        const args = Maybe.nullToMaybe(this._settings.nividiaSettingsLaunchParams.params)
             .map(params => params.concat())
             .orElse([])
             .do(params => params.push("-a", `[${device}:${cardIndex}]/${attributeString}=${value}`))
@@ -59,7 +59,7 @@ export class NvidiaService {
 
         console.log(`setting attribute: ${args}`);
 
-        return Observable.defer(() => launchChild(() => spawn(this._settings.nividiSettingsLaunchParams.path, args, this.spawnOptions)))
+        return Observable.defer(() => launchChild(() => spawn(this._settings.nividiaSettingsLaunchParams.path, args, this.spawnOptions)))
             .filter(event => event.event === "data")
             .map<childEvent, IChildDataEvent>(event => event as IChildDataEvent)
             .map(event => event.data)
@@ -87,11 +87,11 @@ export class NvidiaService {
 
         const limit = Maybe.nullToMaybe(card.power_min_limit)
             .orElse(100)
-            .map(minLimit => Math.max(requestedLimit,minLimit))
+            .map(minLimit => Math.max(requestedLimit, minLimit))
             .defaultTo(100);
 
-        return this.changeSmiSetting(["-i",card.index.toString(),"-pm","1"])
-            .flatMap(() => this.changeSmiSetting(["-i",card.index.toString(),"-pl",limit.toString()]));
+        return this.changeSmiSetting(["-i", card.index.toString(), "-pm", "1"])
+            .flatMap(() => this.changeSmiSetting(["-i", card.index.toString(), "-pl", limit.toString()]));
     }
 
     public query(queryParams?: (keyof INvidiaQuery)[]): Observable<INvidiaQuery[]> {
@@ -105,12 +105,12 @@ export class NvidiaService {
         const queryStart = Date.now();
         console.log(`Nvidia-smi query:`);
 
-        const processParams: string[] = Maybe.nullToMaybe(this._settings.nividiSmiLaunchParams.params)
+        const processParams: string[] = Maybe.nullToMaybe(this._settings.nividiaSmiLaunchParams.params)
             .orElse([])
             .map(params => params.concat("--format=csv,noheader", `--query-gpu=${query.map(this.mapParameter).join()}`))
             .defaultTo([]);
 
-        return launchChild(() => spawn(this._settings.nividiSmiLaunchParams.path, processParams))
+        return launchChild(() => spawn(this._settings.nividiaSmiLaunchParams.path, processParams))
             .filter(message => message.event === "data")
             .map<childEvent, IChildDataEvent>(m => <any>m)
             .map(message => this.parseQueryResult(message, query))
@@ -120,14 +120,30 @@ export class NvidiaService {
             .do(() => console.log(`Query Complete in ${formatDuration(Date.now() - queryStart)}`));
     }
 
+    public setupMonitors() {
+        const params: string[] = Maybe.nullToMaybe(this._settings.nividiaXConfigLaunchParams.params)
+            .map(p => p.concat())
+            .orElse([])
+            .do(params => params.push("-a", "--allow-empty-initial-configuration", "--cool-bits=31", "--use-display-device=\"DFP-0\"", "--connected-monitor=\"DFP-0\""))
+            .defaultTo([]);
+
+        return launchChild(() => spawn(this._settings.nividiaXConfigLaunchParams.path, params))
+            .filter(message => message.event === "data")
+            .map<childEvent, IChildDataEvent>(m => <any>m)
+            .map(message => message.data)
+            .filter(result => result != null)
+            .do(data => console.log(`Setup Monitors Result: ${data}`))
+            .toArray();
+    }
+
     private changeSmiSetting(smiArguments: string[]) {
-        const params: string[] = Maybe.nullToMaybe(this._settings.nividiSmiLaunchParams.params)
+        const params: string[] = Maybe.nullToMaybe(this._settings.nividiaSmiLaunchParams.params)
             .map(p => p.concat())
             .orElse([])
             .do(params => params.push(...smiArguments))
             .defaultTo([]);
 
-        return launchChild(() => spawn(this._settings.nividiSmiLaunchParams.path, params))
+        return launchChild(() => spawn(this._settings.nividiaSmiLaunchParams.path, params))
             .filter(message => message.event === "data")
             .map<childEvent, IChildDataEvent>(m => <any>m)
             .map(message => message.data)

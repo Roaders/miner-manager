@@ -33,6 +33,8 @@ export class MinerSettings {
         this._nvidiaSmiParams = commandLineValues.nvidiaSmiParams;
         this._nvidiaSettingsPath = Maybe.nullToMaybe(commandLineValues.nvidiaSettingsPath).defaultTo("nvidia-settings");
         this._nvidiaSettingsParams = commandLineValues.nvidiaSettingsParams;
+        this._nvidiaXconfigPath = Maybe.nullToMaybe(commandLineValues.nvidiaXConfigPath).defaultTo("nvidia-xconfig");
+        this._nvidiaXconfigParams = commandLineValues.nvidiaXConfigParams;
         this._claymoreParams = commandLineValues.claymoreParams;
         this._minerBaseName = commandLineValues.minerBaseName;
         this._poolAddress = commandLineValues.poolAddress;
@@ -43,6 +45,7 @@ export class MinerSettings {
         this._resetFans = commandLineValues.resetFans;
         this._identify = commandLineValues.identify;
         this._initialClock = commandLineValues.initialClock;
+        this._setup = commandLineValues.setup;
     }
 
     private _settingsValid: boolean;
@@ -54,7 +57,7 @@ export class MinerSettings {
     private _nvidiaSmiPath: string;
     private _nvidiaSmiParams?: string[];
 
-    public get nividiSmiLaunchParams(): IApplicationLaunchParams {
+    public get nividiaSmiLaunchParams(): IApplicationLaunchParams {
         return {
             path: this._nvidiaSmiPath,
             params: this._nvidiaSmiParams
@@ -64,10 +67,20 @@ export class MinerSettings {
     private _nvidiaSettingsPath: string;
     private _nvidiaSettingsParams?: string[];
 
-    public get nividiSettingsLaunchParams(): IApplicationLaunchParams {
+    public get nividiaSettingsLaunchParams(): IApplicationLaunchParams {
         return {
             path: this._nvidiaSettingsPath,
             params: this._nvidiaSettingsParams
+        }
+    }
+
+    private _nvidiaXconfigPath: string;
+    private _nvidiaXconfigParams?: string[];
+
+    public get nividiaXConfigLaunchParams(): IApplicationLaunchParams {
+        return {
+            path: this._nvidiaXconfigPath,
+            params: this._nvidiaXconfigParams
         }
     }
 
@@ -139,6 +152,12 @@ export class MinerSettings {
 
     public get resetFans(): boolean {
         return this._resetFans;
+    }
+
+    private _setup: boolean;
+
+    public get setup(): boolean {
+        return this._setup;
     }
 
     private _identify?: number;

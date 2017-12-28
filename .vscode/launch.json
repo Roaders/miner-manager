@@ -72,6 +72,17 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Mock XConfig",
+            "program": "${workspaceFolder}/dist/mocks/mockNvidiaXconfig.js",
+            "args": ["-a", "--allow-empty-initial-configuration", "--cool-bits=31", "--use-display-device=\"DFP-0\"", "--connected-monitor=\"DFP-0\""],
+            "sourceMaps": true,
+            "console": "internalConsole",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "buildTypescript"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Mock claymore",
             "program": "${workspaceFolder}/dist/mocks/mockClaymore.js",
             "args": ["-mport","3335"],
@@ -151,6 +162,21 @@
                 "--nvidiaSettingsParams=dist/mocks/mockNvidiaSettings.js",
                 "--nvidiaSmiPath=node",
                 "--nvidiaSmiParams=dist/mocks/mockNvidiaSmi.js"
+            ],
+            "sourceMaps": true,
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "buildTypescript"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Setup Monitors",
+            "program": "${workspaceFolder}/dist/index.js",
+            "args": [
+                "--setup",
+                "--nvidiaXConfigPath=node",
+                "--nvidiaXConfigParams=dist/mocks/mockNvidiaXconfig.js"
             ],
             "sourceMaps": true,
             "console": "integratedTerminal",

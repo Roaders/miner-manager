@@ -9,6 +9,8 @@ export interface ICommandLineValues{
     nvidiaSmiParams?: string[];
     nvidiaSettingsPath: string;
     nvidiaSettingsParams?: string[];
+    nvidiaXConfigPath: string;
+    nvidiaXConfigParams?: string[];
     claymorePath: string;
     claymoreParams?: string[];
     minerBaseName?: string;
@@ -18,6 +20,7 @@ export interface ICommandLineValues{
     query: boolean;
     maxFans: boolean;
     resetFans: boolean;
+    setup: boolean;
     identify?: number;
 }
 
@@ -45,6 +48,13 @@ export const commandArgs: OptionWithKeyOf[] = [
     },
     {
         name: "nvidiaSettingsParams",
+        multiple: true
+    },
+    {
+        name: "nvidiaXConfigPath"
+    },
+    {
+        name: "nvidiaXConfigParams",
         multiple: true
     },
     {
@@ -82,6 +92,10 @@ export const commandArgs: OptionWithKeyOf[] = [
     },
     {
         name: "resetFans",
+        type: Boolean
+    },
+    {
+        name: "setup",
         type: Boolean
     },
     {

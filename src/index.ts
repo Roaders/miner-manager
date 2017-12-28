@@ -54,6 +54,14 @@ if (minerSettings.identify != null) {
 
 } else if (minerSettings.query) {
     createNvidiaQueryStream().subscribe();
+} else if (minerSettings.setup) {
+    console.log(`Generating Fake Monitors...`);
+
+    nvidiaService.setupMonitors().subscribe(
+        () => {},
+        () => {},
+        () => console.log(`Monitor Configuration Complete. Please restart system.`)
+    );
 } else {
     startMining();
 }
@@ -83,16 +91,16 @@ function startMining() {
         );
 }
 
-function initialSettings(cards: INvidiaQuery[]): Observable<INvidiaQuery[]>{
+function initialSettings(cards: INvidiaQuery[]): Observable<INvidiaQuery[]> {
     console.log(`Initial settings`);
 
     let returnObservable = Observable.forkJoin(cards.map(card => nvidiaService.setFanSpeed(card.index)))
         .flatMap(() => Observable.forkJoin(cards.map(card => nvidiaService.setPowerLimit(card, 100))))
-        .flatMap(() => Observable.forkJoin(cards.map(card => nvidiaService.assignAttributeValue(card.index,"GPUPowerMizerMode","gpu", "1"))))
+        .flatMap(() => Observable.forkJoin(cards.map(card => nvidiaService.assignAttributeValue(card.index, "GPUPowerMizerMode", "gpu", "1"))))
 
-    if(minerSettings.initialClock != null){
+    if (minerSettings.initialClock != null) {
         const clockSetting = minerSettings.initialClock.toString();
-        const observables = cards.map(card => nvidiaService.assignAttributeValue(card.index,"GPUMemoryTransferRateOffset","gpu", clockSetting));
+        const observables = cards.map(card => nvidiaService.assignAttributeValue(card.index, "GPUMemoryTransferRateOffset", "gpu", clockSetting));
         returnObservable = returnObservable.flatMap(() => Observable.forkJoin(observables))
     }
 
