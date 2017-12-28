@@ -6,7 +6,7 @@ import { MinerSettings, IApplicationLaunchParams } from "../utils/miner-settings
 import { Maybe } from "maybe-monad";
 import formatDuration = require("format-duration");
 
-export type SettingsAttribute = "GPUGraphicsClockOffset" | "GPUMemoryTransferRateOffset" | "GPUFanControlState" | "GPUTargetFanSpeed";
+export type SettingsAttribute = "GPUGraphicsClockOffset" | "GPUMemoryTransferRateOffset" | "GPUFanControlState" | "GPUTargetFanSpeed" | "GPUPowerMizerMode";
 
 export type Device = "gpu" | "fan";
 
