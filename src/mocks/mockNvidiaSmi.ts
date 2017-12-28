@@ -83,4 +83,4 @@ function mockNvidiaSmi() {
     console.log(`nvidia-smi update: ${confirmation}`);
 }
 
-mockNvidiaSmi();
+setTimeout(mockNvidiaSmi, Math.random() * 1000 );

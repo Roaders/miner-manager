@@ -36,4 +36,4 @@ function mockNvidiaSettings() {
     }
 }
 
-mockNvidiaSettings();
+setTimeout(mockNvidiaSettings, Math.random() * 1000 );
