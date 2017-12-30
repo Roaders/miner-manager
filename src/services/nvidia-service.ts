@@ -57,9 +57,12 @@ export class NvidiaService {
             .do(params => params.push("-a", `[${device}:${cardIndex}]/${attributeString}=${value}`))
             .value;
 
-        console.log(`setting attribute: ${args}`);
 
-        return Observable.defer(() => launchChild(() => spawn(this._settings.nividiaSettingsLaunchParams.path, args, this.spawnOptions)))
+        return Observable.defer(() => {
+            console.log(`GPU ${cardIndex}: Setting attribute: ${args}`);
+
+            return launchChild(() => spawn(this._settings.nividiaSettingsLaunchParams.path, args, this.spawnOptions))
+        })
             .filter(event => event.event === "data")
             .map<childEvent, IChildDataEvent>(event => event as IChildDataEvent)
             .map(event => event.data)
@@ -68,19 +71,21 @@ export class NvidiaService {
     }
 
     public setFanSpeed(cardIndex: number, value?: number) {
-        let fanSpeed: Observable<string[]>
-        if (value) {
-            console.log(`Setting fan speed for ${cardIndex} to ${value}`);
-            fanSpeed = this.assignAttributeValue(cardIndex, "GPUTargetFanSpeed", "fan", value.toString());
-        } else {
-            console.log(`Resetting fan speed for ${cardIndex}`);
-            fanSpeed = Observable.of([]);
-        }
 
-        const state = value == null ? "0" : "1";
+        return Observable.defer(() => {
+            let fanSpeed: Observable<string[]>
+            if (value) {
+                console.log(`Setting fan speed for ${cardIndex} to ${value}`);
+                fanSpeed = this.assignAttributeValue(cardIndex, "GPUTargetFanSpeed", "fan", value.toString());
+            } else {
+                console.log(`Resetting fan speed for ${cardIndex}`);
+                fanSpeed = Observable.of([]);
+            }
 
-        return this.assignAttributeValue(cardIndex, "GPUFanControlState", "gpu", state)
-            .flatMap(() => fanSpeed);
+            const state = value == null ? "0" : "1";
+            return this.assignAttributeValue(cardIndex, "GPUFanControlState", "gpu", state)
+                .flatMap(() => fanSpeed);
+        });
     }
 
     public setPowerLimit(card: INvidiaQuery, requestedLimit: number) {
@@ -103,14 +108,17 @@ export class NvidiaService {
             .defaultTo<(keyof INvidiaQuery)[]>([]);
 
         const queryStart = Date.now();
-        console.log(`Nvidia-smi query:`);
 
         const processParams: string[] = Maybe.nullToMaybe(this._settings.nividiaSmiLaunchParams.params)
             .orElse([])
             .map(params => params.concat("--format=csv,noheader", `--query-gpu=${query.map(this.mapParameter).join()}`))
             .defaultTo([]);
 
-        return launchChild(() => spawn(this._settings.nividiaSmiLaunchParams.path, processParams))
+        return Observable.defer(() => {
+            console.log(`Nvidia-smi query:`);
+
+            return launchChild(() => spawn(this._settings.nividiaSmiLaunchParams.path, processParams))
+        })
             .filter(message => message.event === "data")
             .map<childEvent, IChildDataEvent>(m => <any>m)
             .map(message => this.parseQueryResult(message, query))
