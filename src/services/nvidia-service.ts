@@ -124,7 +124,7 @@ export class NvidiaService {
         const params: string[] = Maybe.nullToMaybe(this._settings.nividiaXConfigLaunchParams.params)
             .map(p => p.concat())
             .orElse([])
-            .do(params => params.push("-a", "--allow-empty-initial-configuration", "--cool-bits=31", "--use-display-device=\"DFP-0\"", "--connected-monitor=\"DFP-0\""))
+            .do(params => params.push("-a", "--allow-empty-initial-configuration", "--cool-bits=31", "--use-display-device=DFP-0", "--connected-monitor=DFP-0"))
             .defaultTo([]);
 
         return launchChild(() => spawn(this._settings.nividiaXConfigLaunchParams.path, params))
