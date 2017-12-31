@@ -86,9 +86,9 @@ export class ClaymoreMiner {
     public launch(): Observable<IMinerStatus> {
         this._status = MinerStatus.launching;
 
-        const minerParams = this.buildMinerParams();
-
         this._logger.info(`Claymore miner for index: ${this._card.index}, uuid: ${this._card.uuid} and port: ${this._port}`);
+
+        const minerParams = this.buildMinerParams();
 
         const claymoreLaunch = Observable.defer(() => launchChild(() => spawn(this._settings.claymoreLaunchParams.path, minerParams)));
         const coreQuery = this._nvidiaSettings.queryAttributeValue(this._card.index, "GPUGraphicsClockOffset").do(v => this._graphicsOffset = v);
@@ -106,6 +106,8 @@ export class ClaymoreMiner {
     private buildMinerParams() {
 
         const logPath = path.join(this._settings.logFolder, `Clay_GPU${this._card.index}_${Date.now()}.log`);
+
+        this._logger.info(`logPath: ${logPath}`);
 
         const minerParams = Maybe.nullToMaybe(this._settings.claymoreLaunchParams.params)
             .map(params => params.concat())
