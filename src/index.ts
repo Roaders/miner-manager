@@ -2,6 +2,7 @@
 import { MinerSettings } from "./utils/miner-settings";
 import { Observable, Subject } from "rxjs";
 import { launchChild } from "./utils/rx-child-process";
+import { checkRoot } from "./utils/root-util";
 import { ClaymoreMiner, IMinerStatus, MinerStatus } from "./miner/claymoreMiner";
 import { Maybe } from "maybe-monad";
 import { displayMiners, DisplayMode } from "./utils/display-helper";
@@ -55,6 +56,8 @@ if (minerSettings.identify != null) {
 } else if (minerSettings.query) {
     createNvidiaQueryStream().subscribe();
 } else if (minerSettings.setup) {
+    checkRoot();
+
     console.log(`Generating Fake Monitors...`);
 
     nvidiaService.setupMonitors().subscribe(
