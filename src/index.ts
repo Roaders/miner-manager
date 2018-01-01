@@ -65,6 +65,13 @@ if (minerSettings.identify != null) {
         () => {},
         () => console.log(`Monitor Configuration Complete. Please restart system.`)
     );
+} else if (minerSettings.applySettings) {
+
+    console.log(`Applying initial Settings...`);
+
+    createNvidiaQueryStream()
+        .flatMap(initialSettings)
+        .subscribe(() => console.log(`all settings applied`));
 } else {
     startMining();
 }

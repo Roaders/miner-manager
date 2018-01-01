@@ -30,6 +30,24 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Apply settings",
+            "program": "${workspaceFolder}/dist/index.js",
+            "args": [
+                "--applySettings",
+                "--nvidiaSmiPath=node",
+                "--nvidiaSmiParams=dist/mocks/mockNvidiaSmi.js",
+                "--nvidiaSettingsPath=node",
+                "--nvidiaSettingsParams=dist/mocks/mockNvidiaSettings.js",
+                "--initialClock=1500"
+            ],
+            "sourceMaps": true,
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "buildTypescript"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Launch Manager Test",
             "program": "${workspaceFolder}/dist/index.js",
             "args": [

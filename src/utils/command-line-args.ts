@@ -21,6 +21,7 @@ export interface ICommandLineValues{
     maxFans: boolean;
     resetFans: boolean;
     setup: boolean;
+    applySettings: boolean;
     identify?: number;
 }
 
@@ -96,6 +97,10 @@ export const commandArgs: OptionWithKeyOf[] = [
     },
     {
         name: "setup",
+        type: Boolean
+    },
+    {
+        name: "applySettings",
         type: Boolean
     },
     {

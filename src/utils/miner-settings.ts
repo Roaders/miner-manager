@@ -46,6 +46,7 @@ export class MinerSettings {
         this._identify = commandLineValues.identify;
         this._initialClock = commandLineValues.initialClock;
         this._setup = commandLineValues.setup;
+        this._applySettings = commandLineValues.applySettings;
     }
 
     private _settingsValid: boolean;
@@ -152,6 +153,12 @@ export class MinerSettings {
 
     public get resetFans(): boolean {
         return this._resetFans;
+    }
+
+    private _applySettings: boolean;
+
+    public get applySettings(): boolean {
+        return this._applySettings;
     }
 
     private _setup: boolean;
