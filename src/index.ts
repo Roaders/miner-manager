@@ -97,14 +97,18 @@ function startMining() {
 function initialSettings(cards: INvidiaQuery[]): Observable<INvidiaQuery[]> {
     console.log(`Initial settings`);
 
-    let returnObservable = Observable.forkJoin(cards.map(card => nvidiaService.setFanSpeed(card.index)))
-        .flatMap(() => Observable.forkJoin(cards.map(card => nvidiaService.setPowerLimit(card, 100))))
-        .flatMap(() => Observable.forkJoin(cards.map(card => nvidiaService.assignAttributeValue(card.index, "GPUPowerMizerMode", "gpu", "1"))))
+    let returnObservable = Observable.from(cards.map(card => nvidiaService.setFanSpeed(card.index)))
+        .mergeAll(2).toArray()
+        .do(() => console.log(`Setting power limits...`))
+        .flatMap(() => Observable.from(cards.map(card => nvidiaService.setPowerLimit(card, 100))))
+        .mergeAll(2).toArray();
 
     if (minerSettings.initialClock != null) {
         const clockSetting = minerSettings.initialClock.toString();
         const observables = cards.map(card => nvidiaService.assignAttributeValue(card.index, "GPUMemoryTransferRateOffset", "gpu", clockSetting));
-        returnObservable = returnObservable.flatMap(() => Observable.forkJoin(observables))
+        returnObservable = returnObservable.flatMap(() => Observable.from(observables))
+            .mergeAll(2)
+            .toArray();
     }
 
     return returnObservable

@@ -95,8 +95,15 @@ export class NvidiaService {
             .map(minLimit => Math.max(requestedLimit, minLimit))
             .defaultTo(100);
 
-        return this.changeSmiSetting(["-i", card.index.toString(), "-pm", "1"])
-            .flatMap(() => this.changeSmiSetting(["-i", card.index.toString(), "-pl", limit.toString()]));
+        return Observable.defer(() => {
+            console.log(`Setting power limit for card ${card.index} to ${limit}`);
+
+            return this.assignAttributeValue(card.index, "GPUPowerMizerMode", "gpu", "1")
+                .toArray()
+                .flatMap(() => this.changeSmiSetting(["-i", card.index.toString(), "-pm", "1"]))
+                .toArray()
+                .flatMap(() => this.changeSmiSetting(["-i", card.index.toString(), "-pl", limit.toString()]));
+        })
     }
 
     public query(queryParams?: (keyof INvidiaQuery)[]): Observable<INvidiaQuery[]> {
@@ -151,13 +158,17 @@ export class NvidiaService {
             .do(params => params.push(...smiArguments))
             .defaultTo([]);
 
-        return launchChild(() => spawn(this._settings.nividiaSmiLaunchParams.path, params))
-            .filter(message => message.event === "data")
-            .map<childEvent, IChildDataEvent>(m => <any>m)
-            .map(message => message.data)
-            .filter(result => result != null)
-            .do(data => console.log(`Smi setting result: ${data}`))
-            .toArray();
+        return Observable.defer(() => {
+            console.log(`Adjusting smi setting: ${smiArguments}`);
+
+            return launchChild(() => spawn(this._settings.nividiaSmiLaunchParams.path, params))
+                .filter(message => message.event === "data")
+                .map<childEvent, IChildDataEvent>(m => <any>m)
+                .map(message => message.data)
+                .filter(result => result != null)
+                .do(data => console.log(`Smi setting result: ${data}`))
+                .toArray();
+        })
     }
 
     private mapParameter(parameter: keyof INvidiaQuery): string {
