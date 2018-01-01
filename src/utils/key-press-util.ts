@@ -1,25 +1,44 @@
 
-import { Observable, Subject } from "rxjs";
+import { Observable } from "rxjs";
 import { Key } from "readline"
 
 export function createKeypressStream(): Observable<Key> {
     require('keypress')(process.stdin);
 
-    const refreshSubject = new Subject<Key>();
+    let stream: NodeJS.ReadStream | undefined;
 
+    let handler: any;
     console.log(`Listening for keypresses...`);
 
-    process.stdin.on('keypress', (ch, key: Key) => {
+    const addListener = (eventName: string, eventHandler: Function) => {
+        console.log(`adding event listener '${eventName}' to process.stdin (${handler})`);
 
-        if (key && key.ctrl && key.name == 'c') {
-            console.log(`Exiting`);
-            process.exit();
-        } else if (key) {
-            refreshSubject.next(key);
+        handler = (ch: any, key: Key) => {
+
+            if (key && key.ctrl && key.name == 'c') {
+                console.log(`Exiting`);
+                process.exit();
+            } else if(key) {
+                console.log(`passing events to handler (${key.name})`);
+
+                eventHandler(key);
+            }
         }
-    });
-    (<any>process.stdin).setRawMode(true);
 
-    return refreshSubject;
+        stream = process.stdin.addListener(eventName, handler);
+
+        (<any>process.stdin).setRawMode(true);
+    }
+
+    const removeListener = (eventName: string) => {
+
+        if(stream){
+            console.log(`removing event listener '${eventName}' from stream (${stream})`);
+            stream.removeListener(eventName, handler)
+
+            stream = undefined;
+        }
+    }
+
+    return Observable.fromEvent({ addListener, removeListener }, "keypress");
 }
-

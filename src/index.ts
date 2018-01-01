@@ -4,6 +4,7 @@ import { MinerSettings } from "./utils/miner-settings";
 import { Observable, Subject } from "rxjs";
 import { launchChild } from "./utils/rx-child-process";
 import { checkRoot } from "./utils/root-util";
+import { reboot } from "./utils/reboot-util";
 import { ClaymoreMiner, IMinerStatus, MinerStatus } from "./miner/claymoreMiner";
 import { Maybe } from "maybe-monad";
 import { displayMiners, DisplayMode } from "./utils/display-helper";
@@ -35,6 +36,8 @@ if (minerSettings.identify != null) {
 } else if (minerSettings.maxFans) {
     checkRoot();
 
+    checkRoot();
+
     console.log(`Settings all fans to 100%`);
 
     createNvidiaQueryStream()
@@ -43,6 +46,8 @@ if (minerSettings.identify != null) {
         .subscribe();
 
 } else if (minerSettings.resetFans) {
+    checkRoot();
+
     checkRoot();
 
     console.log(`Resetting all fans`);
@@ -62,7 +67,7 @@ if (minerSettings.identify != null) {
     nvidiaService.setupMonitors().subscribe(
         () => { },
         () => { },
-        () => console.log(`Monitor Configuration Complete. Please restart system.`)
+        () => reboot(`Monitor Configuration Complete.`)
     );
 } else if (minerSettings.applySettings) {
 
@@ -72,6 +77,8 @@ if (minerSettings.identify != null) {
         .flatMap(initialSettings)
         .subscribe(() => console.log(`all settings applied`));
 } else {
+    checkRoot();
+
     startMining();
 }
 
