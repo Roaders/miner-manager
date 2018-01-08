@@ -1,10 +1,10 @@
 {
   "name": "miner-manager",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Node utility that uses Claymore miner, nvidia-smi and nvidia-settings to fune tune overclock settings for multiple GPUs on a Linux system",
   "main": "dist/index.js",
   "bin": {
-      "miner-manager": "dist/index.js"
+    "miner-manager": "dist/index.js"
   },
   "dependencies": {
     "@types/format-duration": "^1.0.0",
