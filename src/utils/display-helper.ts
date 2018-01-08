@@ -91,8 +91,6 @@ function constructTotalsRow(statuses: IMinerStatus[]): string[] {
     let totalPower = 0;
     let totalRate = 0;
     let totalShares = 0;
-    let totalRejected = 0;
-    let totalInvalid = 0;
 
     statuses.forEach(status => {
         Maybe.nullToMaybe(status.cardDetails)
@@ -111,18 +109,6 @@ function constructTotalsRow(statuses: IMinerStatus[]): string[] {
             .map(eth => eth.shares)
             .filter(s => !isNaN(s))
             .do(s => totalShares += s);
-
-        Maybe.nullToMaybe(status.claymoreDetails)
-            .map(d => d.ethHashes)
-            .map(eth => eth.rejected)
-            .filter(s => !isNaN(s))
-            .do(s => totalRejected += s);
-
-        Maybe.nullToMaybe(status.claymoreDetails)
-            .map(d => d.ethHashes)
-            .map(eth => eth.invalid)
-            .filter(s => !isNaN(s))
-            .do(s => totalInvalid += s);
     });
 
     const overallEfficiency = totalRate / totalPower;
@@ -136,7 +122,7 @@ function constructTotalsRow(statuses: IMinerStatus[]): string[] {
         "", //  Temp
         "", //  Time
         totalRate.toFixed(3),
-        `${totalShares} (${totalRejected}/${totalInvalid})`,
+        `${totalShares}`,
         overallEfficiency.toFixed(3)
     ];
 }
