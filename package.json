@@ -1,54 +1,56 @@
 {
-  "name": "miner-manager",
-  "version": "1.0.3",
-  "description": "Node utility that uses Claymore miner, nvidia-smi and nvidia-settings to fune tune overclock settings for multiple GPUs on a Linux system",
-  "main": "dist/index.js",
-  "bin": {
-    "miner-manager": "dist/index.js"
-  },
-  "dependencies": {
-    "@types/format-duration": "^1.0.0",
-    "@types/moment-duration-format": "^1.3.8",
-    "cli-color": "^1.2.0",
-    "cli-table2": "^0.2.0",
-    "clui": "^0.3.6",
-    "command-line-args": "^4.0.7",
-    "command-line-usage": "^4.0.1",
-    "duration-time-format": "^1.1.3",
-    "format-duration": "^1.0.0",
-    "keypress": "^0.2.1",
-    "linebyline": "^1.3.0",
-    "maybe-monad": "0.0.2",
-    "moment-duration-format": "^1.3.0",
-    "rxjs": "^5.5.2",
-    "winston": "^2.3.1"
-  },
-  "devDependencies": {
-    "@types/cli-table2": "^0.2.1",
-    "@types/command-line-args": "^4.0.2",
-    "@types/node": "^8.0.57",
-    "@types/winston": "^2.3.7",
-    "typescript": "^2.6.1"
-  },
-  "scripts": {
-    "build": "tsc",
-    "mock": "node dist/index.js --startPort=2340 --logFolder=logMock --nvidiaSettingsPath=node --nvidiaSettingsParams=dist/mocks/mockNvidiaSettings.js --nvidiaSmiPath=node --nvidiaSmiParams=dist/mocks/mockNvidiaSmi.js --claymorePath=node --claymoreParams=dist/mocks/mockClaymore.js",
-    "prestart": "npm run build",
-    "premock": "npm run build",
-    "start": "node dist/index.js --initialClock=1500 --startPort=3331 --logFolder=log --claymorePath=/usr/local/claymore100/ethdcrminer64 --minerBaseName=Andy --poolAddress=eu1.ethermine.org:4444 --walletAddress=0x06ac78d0bb2e6cc76990176ec29d17901fe7aa6c",
-    "prepare": "npm run build",
-    "prepublishOnly": "npm version patch",
-    "postpublish": "npm run push-public",
-    "push-public": "git push https://github.com/Roaders/miner-manager.git --follow-tags"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Roaders/miner-manager.git"
-  },
-  "author": "Giles Roadnight",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/Roaders/miner-manager/issues"
-  },
-  "homepage": "https://github.com/Roaders/miner-manager#readme"
+    "name": "miner-manager",
+    "version": "1.0.3",
+    "description": "Node utility that uses Claymore miner, nvidia-smi and nvidia-settings to fune tune overclock settings for multiple GPUs on a Linux system",
+    "main": "dist/index.js",
+    "bin": {
+        "miner-manager": "dist/index.js"
+    },
+    "dependencies": {
+        "@types/format-duration": "^1.0.0",
+        "@types/moment-duration-format": "^1.3.8",
+        "cli-color": "^1.2.0",
+        "cli-table2": "^0.2.0",
+        "clui": "^0.3.6",
+        "command-line-args": "^4.0.7",
+        "command-line-usage": "^4.0.1",
+        "duration-time-format": "^1.1.3",
+        "format-duration": "^1.0.0",
+        "keypress": "^0.2.1",
+        "linebyline": "^1.3.0",
+        "maybe-monad": "0.0.2",
+        "moment-duration-format": "^1.3.0",
+        "rxjs": "^5.5.2",
+        "winston": "^2.3.1"
+    },
+    "devDependencies": {
+        "@types/cli-table2": "^0.2.1",
+        "@types/command-line-args": "^4.0.2",
+        "@types/node": "^8.0.57",
+        "@types/winston": "^2.3.7",
+        "rimraf": "^2.6.2",
+        "typescript": "^2.6.1"
+    },
+    "scripts": {
+        "clean": "rimraf dist",
+        "build": "tsc",
+        "mock": "node dist/index.js --startPort=2340 --logFolder=logMock --nvidiaSettingsPath=node --nvidiaSettingsParams=dist/mocks/mockNvidiaSettings.js --nvidiaSmiPath=node --nvidiaSmiParams=dist/mocks/mockNvidiaSmi.js --claymorePath=node --claymoreParams=dist/mocks/mockClaymore.js",
+        "prestart": "npm run build",
+        "premock": "npm run build",
+        "start": "node dist/index.js --initialClock=1500 --startPort=3331 --logFolder=log --claymorePath=/usr/local/claymore100/ethdcrminer64 --minerBaseName=Andy --poolAddress=eu1.ethermine.org:4444 --walletAddress=0x06ac78d0bb2e6cc76990176ec29d17901fe7aa6c",
+        "prepare": "npm run clean && npm run build",
+        "prepublishOnly": "npm version patch",
+        "postpublish": "npm run push-public",
+        "push-public": "git push https://github.com/Roaders/miner-manager.git --follow-tags"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Roaders/miner-manager.git"
+    },
+    "author": "Giles Roadnight",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/Roaders/miner-manager/issues"
+    },
+    "homepage": "https://github.com/Roaders/miner-manager#readme"
 }
