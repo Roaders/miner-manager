@@ -36,7 +36,7 @@
     "prepare": "npm run build",
     "prepublishOnly": "npm version patch",
     "postpublish": "npm run push-public",
-    "push-public": "git push %npm_package_repository_url% --follow-tags"
+    "push-public": "git push https://github.com/Roaders/miner-manager.git --follow-tags"
   },
   "repository": {
     "type": "git",
