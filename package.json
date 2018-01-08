@@ -33,11 +33,14 @@
     "prestart": "npm run build",
     "premock": "npm run build",
     "start": "node dist/index.js --initialClock=1500 --startPort=3331 --logFolder=log --claymorePath=/usr/local/claymore100/ethdcrminer64 --minerBaseName=Andy --poolAddress=eu1.ethermine.org:4444 --walletAddress=0x06ac78d0bb2e6cc76990176ec29d17901fe7aa6c",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "prepublishOnly": "npm version patch",
+    "postpublish": "npm run push-public",
+    "push-public": "git push %npm_package_repository_url% --follow-tags"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Roaders/miner-manager.git"
+    "url": "https://github.com/Roaders/miner-manager.git"
   },
   "author": "Giles Roadnight",
   "license": "MIT",
