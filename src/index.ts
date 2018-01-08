@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 
 import { MinerSettings } from "./utils/miner-settings";
 import { Observable, Subject } from "rxjs";
