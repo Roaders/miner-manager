@@ -111,9 +111,9 @@ export class NvidiaService {
 
         const query = Maybe.nullToMaybe(queryParams)
             .orElse([])
-            .map(params => { params.unshift("index"); return params; })
-            .map(params => { params.unshift("uuid"); return params; })
             .map(params => { params.unshift("pci_bus_id"); return params; })
+            .map(params => { params.unshift("uuid"); return params; })
+            .map(params => { params.unshift("index"); return params; })
             .defaultTo<(keyof INvidiaQuery)[]>([]);
 
         const queryStart = Date.now();
