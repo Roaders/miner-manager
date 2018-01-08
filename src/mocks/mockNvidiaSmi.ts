@@ -21,7 +21,7 @@ function mockNvidiaSmi() {
 
         const requestedParams = query.value ? query.value : [];
 
-        for (let index = 0; index < 8; index++) {
+        for (let index = 0; index < 12; index++) {
             let output = "";
 
             requestedParams.forEach(value => {
@@ -30,8 +30,11 @@ function mockNvidiaSmi() {
                     case "index":
                         output += index;
                         break;
-                    case "uuid":
+                    case "uuid": 
                         output += `uuid_${index}`;
+                        break;
+                    case "pci.bus_id":
+                        output += `00000000:${index.toString(16)}:00.0`;
                         break;
                     case "power.draw":
                         const power = (Math.random() * 30) + 80;

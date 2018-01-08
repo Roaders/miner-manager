@@ -19,6 +19,7 @@ export interface INvidiaQuery {
     utilization_gpu?: number;
     temperature_gpu?: number;
     fan_speed?: number;
+    pci_bus_id?: string;
 }
 
 export class NvidiaService {
@@ -112,6 +113,7 @@ export class NvidiaService {
             .orElse([])
             .map(params => { params.unshift("index"); return params; })
             .map(params => { params.unshift("uuid"); return params; })
+            .map(params => { params.unshift("pci_bus_id"); return params; })
             .defaultTo<(keyof INvidiaQuery)[]>([]);
 
         const queryStart = Date.now();
@@ -177,6 +179,10 @@ export class NvidiaService {
         switch (output) {
             case "power.min.limit":
                 output = "power.min_limit";
+                break;
+
+            case "pci_bus_id":
+                output = "pci.bus_id";
                 break;
         }
 
