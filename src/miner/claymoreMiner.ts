@@ -116,7 +116,7 @@ export class ClaymoreMiner {
         minerParams.push(`-mport`, this._port.toString()); // management port
         minerParams.push(`-logfile`, logPath); // log path
         minerParams.push(`-di`, this.getCardIdentifier(this._card.index)); // card index
-        minerParams.push(`-r`, "1"); // do not restart miner
+        minerParams.push(`-r`, "0"); // restart miner if problem (change to -r -1 to disable)
 
         const poolAddress = Maybe.nullToMaybe(this._settings.poolAddress);
         const walletAddress = Maybe.nullToMaybe(this._settings.walletAddress);
