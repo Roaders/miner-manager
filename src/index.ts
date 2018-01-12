@@ -23,6 +23,8 @@ const nvidiaService = new NvidiaService(minerSettings);
 let displayMode = DisplayMode.Compact;
 
 if (minerSettings.identify != null) {
+    checkRoot();
+    
     const gpuId = minerSettings.identify;
     console.log(`Spinning up fan for GPU ${gpuId}, all other fans to 0`);
 
@@ -31,6 +33,7 @@ if (minerSettings.identify != null) {
         .mergeAll(2)
         .subscribe();
 } else if (minerSettings.maxFans) {
+    checkRoot();
 
     console.log(`Settings all fans to 100%`);
 
@@ -40,6 +43,7 @@ if (minerSettings.identify != null) {
         .subscribe();
 
 } else if (minerSettings.resetFans) {
+    checkRoot();
 
     console.log(`Resetting all fans`);
 
