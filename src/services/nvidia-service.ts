@@ -75,7 +75,7 @@ export class NvidiaService {
 
         return Observable.defer(() => {
             let fanSpeed: Observable<string[]>
-            if (value) {
+            if (value !== undefined) {
                 console.log(`Setting fan speed for ${cardIndex} to ${value}`);
                 fanSpeed = this.assignAttributeValue(cardIndex, "GPUTargetFanSpeed", "fan", value.toString());
             } else {

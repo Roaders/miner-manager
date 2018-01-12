@@ -24,13 +24,12 @@ let displayMode = DisplayMode.Compact;
 
 if (minerSettings.identify != null) {
     const gpuId = minerSettings.identify;
-    console.log(`Spinning up fan for GPU ${gpuId} for 20 seconds, all other fans to 0`);
+    console.log(`Spinning up fan for GPU ${gpuId}, all other fans to 0`);
 
     createNvidiaQueryStream()
-        .flatMap(cards => Observable.forkJoin(cards.map(card => nvidiaService.setFanSpeed(card.index, card.index === gpuId ? 100 : 0))))
-        .delay(1000)
-        .flatMap(() => createNvidiaQueryStream())
-        .subscribe();
+    .flatMap(cards => Observable.from(cards.map(card => nvidiaService.setFanSpeed(card.index, card.index === gpuId ? 100 : 0))))
+    .mergeAll(2)
+    .subscribe();
 } else if (minerSettings.maxFans) {
 
     console.log(`Settings all fans to 100%`);
