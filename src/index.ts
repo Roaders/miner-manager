@@ -27,16 +27,16 @@ if (minerSettings.identify != null) {
     console.log(`Spinning up fan for GPU ${gpuId}, all other fans to 0`);
 
     createNvidiaQueryStream()
-    .flatMap(cards => Observable.from(cards.map(card => nvidiaService.setFanSpeed(card.index, card.index === gpuId ? 100 : 0))))
-    .mergeAll(2)
-    .subscribe();
+        .flatMap(cards => Observable.from(cards.map(card => nvidiaService.setFanSpeed(card.index, card.index === gpuId ? 100 : 0))))
+        .mergeAll(2)
+        .subscribe();
 } else if (minerSettings.maxFans) {
 
     console.log(`Settings all fans to 100%`);
 
     createNvidiaQueryStream()
-        .map(cards => cards.map(card => nvidiaService.setFanSpeed(card.index, 100)))
-        .flatMap(assignments => Observable.forkJoin(assignments))
+        .flatMap(cards => Observable.from(cards.map(card => nvidiaService.setFanSpeed(card.index, 100))))
+        .mergeAll(2)
         .subscribe();
 
 } else if (minerSettings.resetFans) {
@@ -44,9 +44,8 @@ if (minerSettings.identify != null) {
     console.log(`Resetting all fans`);
 
     createNvidiaQueryStream()
-        .map(cards => cards.map(card => nvidiaService.setFanSpeed(card.index)))
-        .flatMap(assignments => Observable.forkJoin(assignments))
-        .do(() => console.log(`forkjoin value`), undefined, () => console.log(`Forkjoin complete`))
+        .flatMap(cards => Observable.from(cards.map(card => nvidiaService.setFanSpeed(card.index))))
+        .mergeAll(2)
         .subscribe();
 
 } else if (minerSettings.query) {
@@ -57,8 +56,8 @@ if (minerSettings.identify != null) {
     console.log(`Generating Fake Monitors...`);
 
     nvidiaService.setupMonitors().subscribe(
-        () => {},
-        () => {},
+        () => { },
+        () => { },
         () => console.log(`Monitor Configuration Complete. Please restart system.`)
     );
 } else if (minerSettings.applySettings) {
