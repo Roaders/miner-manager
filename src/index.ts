@@ -28,11 +28,7 @@ if (minerSettings.identify != null) {
 
     createNvidiaQueryStream()
         .flatMap(cards => Observable.forkJoin(cards.map(card => nvidiaService.setFanSpeed(card.index, card.index === gpuId ? 100 : 0))))
-        .flatMap(() => createNvidiaQueryStream())
-        .do(() => console.log(`Waiting 20 seconds to reset fans...`))
-        .delay(20 * 1000)
-        .flatMap(cards => Observable.forkJoin(cards.map(card => nvidiaService.setFanSpeed(card.index))))
-        .do(() => console.log(`Fan speed should return to normal`))
+        .delay(1000)
         .flatMap(() => createNvidiaQueryStream())
         .subscribe();
 } else if (minerSettings.maxFans) {
