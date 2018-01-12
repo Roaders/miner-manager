@@ -7,6 +7,8 @@ export function createKeypressStream(): Observable<Key> {
 
     const refreshSubject = new Subject<Key>();
 
+    console.log(`Listening for keypresses...`);
+
     process.stdin.on('keypress', (ch, key: Key) => {
 
         if (key && key.ctrl && key.name == 'c') {

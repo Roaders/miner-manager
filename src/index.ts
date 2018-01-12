@@ -135,7 +135,7 @@ function createMiners(ids: INvidiaQuery[]): Observable<IMinerStatus[]> {
     const miners = ids.map(card => new ClaymoreMiner(card, minerSettings.startPort + card.index, minerSettings));
 
     const queryStream = Observable.interval(minerSettings.queryInterval)
-        .merge(keyPressStream())
+        .merge(keyPressStream().do(key => console.log(`Keypress '${key.name}' detected`)))
         .map(() => createNvidiaQueryStream())
         .mergeAll(1)
         .takeWhile(() => miners.some(miner => miner.status === MinerStatus.up))

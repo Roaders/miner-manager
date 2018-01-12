@@ -91,10 +91,15 @@ export class ClaymoreMiner {
         const minerParams = this.buildMinerParams();
 
         const claymoreLaunch = Observable.defer(() => launchChild(() => spawn(this._settings.claymoreLaunchParams.path, minerParams)));
-        const coreQuery = this._nvidiaSettings.queryAttributeValue(this._card.index, "GPUGraphicsClockOffset").do(v => this._graphicsOffset = v);
-        const memoryQuery = this._nvidiaSettings.queryAttributeValue(this._card.index, "GPUMemoryTransferRateOffset").do(v => this._memoryOffset = v);
+        const coreQuery = this._nvidiaSettings.queryAttributeValue(this._card.index, "GPUGraphicsClockOffset")
+            .do(v => console.log(`GPU ${this._card.index} Graphics clock offset: ${v}`))
+            .do(v => this._graphicsOffset = v);
+        const memoryQuery = this._nvidiaSettings.queryAttributeValue(this._card.index, "GPUMemoryTransferRateOffset")
+            .do(v => console.log(`GPU ${this._card.index} Memory clock offset: ${v}`))
+            .do(v => this._memoryOffset = v);
 
-        return Observable.forkJoin(coreQuery, memoryQuery)
+        return coreQuery
+            .flatMap(() => memoryQuery)
             .flatMap(() => claymoreLaunch)
             .do(message => this.storeMessages(message))
             .map(message => this.handleMessages(message))
