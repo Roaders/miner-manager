@@ -2,7 +2,7 @@
 import { MinerSettings, IApplicationLaunchParams } from "../utils/miner-settings";
 import { launchChild, childEvent, IChildDataEvent } from "../utils/rx-child-process";
 
-import { Observable } from "rxjs/Observable";
+import { Observable, Observer } from "rxjs";
 import { NvidiaService, INvidiaQuery } from "../services/nvidia-service";
 import { IClaymoreStats, ClaymoreService } from "../services/claymore-service";
 import { spawn } from "child_process";
@@ -10,6 +10,7 @@ import { Maybe } from "maybe-monad";
 import * as winston from "winston";
 import * as path from "path";
 import { stat } from "fs";
+import { Subject } from "rxjs/Subject";
 
 //  TODO: need to use better names to distinguish the interface and enum
 export enum MinerStatus {
@@ -73,7 +74,7 @@ export class ClaymoreMiner {
             return this._claymoreService.getMinerStats()
                 .do(() => this._status = MinerStatus.up)
                 .catch(error => {
-                    console.error(`Error getting claymore status: ${error.toString()}`);
+                    console.error(`GPU ${this._card.index} Error getting claymore status: ${error.toString()}`);
                     return Observable.of(undefined);
                 })
                 .map(stats => this.constructStatus(stats));
@@ -83,14 +84,21 @@ export class ClaymoreMiner {
 
     private _logger: winston.LoggerInstance;
 
-    public launch(): Observable<IMinerStatus> {
+    public launch(): Observable<Observable<IMinerStatus>> {
+
         this._status = MinerStatus.launching;
 
         this._logger.info(`Claymore miner for index: ${this._card.index}, uuid: ${this._card.uuid} and port: ${this._port}`);
 
         const minerParams = this.buildMinerParams();
 
-        const claymoreLaunch = Observable.defer(() => launchChild(() => spawn(this._settings.claymoreLaunchParams.path, minerParams)));
+        const claymoreLaunch = Observable.defer(() => launchChild(() => spawn(this._settings.claymoreLaunchParams.path, minerParams)))
+            .do(message => this.storeMessages(message))
+            .map(message => this.handleMessages(message))
+            .filter(message => message != null)
+            .map<IMinerStatus | null, IMinerStatus>(m => m!)
+            .merge(Observable.of(this.constructStatus()));
+
         const coreQuery = this._nvidiaSettings.queryAttributeValue(this._card.index, "GPUGraphicsClockOffset")
             .do(v => console.log(`GPU ${this._card.index} Graphics clock offset: ${v}`))
             .do(v => this._graphicsOffset = v);
@@ -98,14 +106,14 @@ export class ClaymoreMiner {
             .do(v => console.log(`GPU ${this._card.index} Memory clock offset: ${v}`))
             .do(v => this._memoryOffset = v);
 
-        return coreQuery
-            .flatMap(() => memoryQuery)
-            .flatMap(() => claymoreLaunch)
-            .do(message => this.storeMessages(message))
-            .map(message => this.handleMessages(message))
-            .filter(message => message != null)
-            .map<IMinerStatus | null, IMinerStatus>(m => m!)
-            .merge(Observable.of(this.constructStatus()));
+        return Observable.create((observer: Observer<Observable<IMinerStatus>>) => {
+            coreQuery
+                .flatMap(() => memoryQuery)
+                .subscribe(() => {
+                    observer.next(claymoreLaunch);
+                    observer.complete();
+                });
+        });
     }
 
     private buildMinerParams() {

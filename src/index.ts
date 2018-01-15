@@ -24,7 +24,7 @@ let displayMode = DisplayMode.Compact;
 
 if (minerSettings.identify != null) {
     checkRoot();
-    
+
     const gpuId = minerSettings.identify;
     console.log(`Spinning up fan for GPU ${gpuId}, all other fans to 0`);
 
@@ -136,12 +136,31 @@ function createMiners(ids: INvidiaQuery[]): Observable<IMinerStatus[]> {
         .merge(keyPressStream().do(key => console.log(`Keypress '${key.name}' detected`)))
         .map(() => createNvidiaQueryStream())
         .mergeAll(1)
-        .takeWhile(() => miners.some(miner => miner.status === MinerStatus.up))
+        .takeWhile(() => miners.some(miner => miner.status !== MinerStatus.down))
         .share();
 
-    const minerUpdates = Observable.combineLatest(miners.map(miner => createMinerStream(miner, queryStream)))
+    const launchStreamCreationObservables = miners.map(miner => {
+        return Observable.defer(() => {
+            console.log(`Creating miner ${miner.card.index}...`);
 
-    return minerUpdates;
+            return miner.launch()
+                .do(() => console.log(`Miner ${miner.card.index} Created`));
+        })
+    });
+
+    const updatesStream = miners.map(miner => createMinerUpdatesStream(miner, queryStream));
+
+    return Observable.from(launchStreamCreationObservables)
+        .mergeAll(2)
+        .flatMap(obs => obs)
+        .merge(...updatesStream)
+        .scan<IMinerStatus, IMinerStatus[]>((acc, value) => accumulateUpdate(acc,value), [])
+}
+
+function accumulateUpdate(accumulatedValue: IMinerStatus[], status: IMinerStatus): IMinerStatus[]{
+    accumulatedValue[status.cardDetails.index] = status;
+
+    return accumulatedValue;
 }
 
 function keyPressStream() {
@@ -155,17 +174,16 @@ function keyPressStream() {
         .filter(key => key.name === "s" || key.name === "d");
 }
 
-function createMinerStream(miner: ClaymoreMiner, queries: Observable<INvidiaQuery[]>): Observable<IMinerStatus> {
-    const minerUpdates = miner.launch();
+function createMinerUpdatesStream(miner: ClaymoreMiner, queryStream: Observable<INvidiaQuery[]>): Observable<IMinerStatus> {
 
-    const queryUpdates = queries
-        .map(queries => queries.filter(query => query.uuid === miner.card.uuid)[0])
-        .filter(query => query != undefined)
-        .map<INvidiaQuery | undefined, INvidiaQuery>(q => q!)
-        .flatMap(query => miner.getStatusAsync(query))
-        .takeWhile(() => miner.status !== MinerStatus.down);
-
-    return minerUpdates.merge(queryUpdates);
+    return Observable.defer(() => {
+        return queryStream
+            .map(queries => queries.filter(query => query.uuid === miner.card.uuid)[0])
+            .filter(query => query != undefined)
+            .map<INvidiaQuery | undefined, INvidiaQuery>(q => q!)
+            .flatMap(query => miner.getStatusAsync(query))
+            .takeWhile(() => miner.status !== MinerStatus.down);
+    });
 }
 
 function toggleDisplayMode() {
