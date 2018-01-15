@@ -30,7 +30,7 @@ if (minerSettings.identify != null) {
 
     createNvidiaQueryStream()
         .flatMap(cards => Observable.from(cards.map(card => nvidiaService.setFanSpeed(card.index, card.index === gpuId ? 100 : 0))))
-        .mergeAll(2)
+        .mergeAll(4)
         .subscribe();
 } else if (minerSettings.maxFans) {
     checkRoot();
@@ -39,7 +39,7 @@ if (minerSettings.identify != null) {
 
     createNvidiaQueryStream()
         .flatMap(cards => Observable.from(cards.map(card => nvidiaService.setFanSpeed(card.index, 100))))
-        .mergeAll(2)
+        .mergeAll(4)
         .subscribe();
 
 } else if (minerSettings.resetFans) {
@@ -49,7 +49,7 @@ if (minerSettings.identify != null) {
 
     createNvidiaQueryStream()
         .flatMap(cards => Observable.from(cards.map(card => nvidiaService.setFanSpeed(card.index))))
-        .mergeAll(2)
+        .mergeAll(4)
         .subscribe();
 
 } else if (minerSettings.query) {
@@ -104,16 +104,16 @@ function initialSettings(cards: INvidiaQuery[]): Observable<INvidiaQuery[]> {
     console.log(`Initial settings`);
 
     let returnObservable = Observable.from(cards.map(card => nvidiaService.setFanSpeed(card.index)))
-        .mergeAll(2).toArray()
+        .mergeAll(4).toArray()
         .do(() => console.log(`Setting power limits...`))
         .flatMap(() => Observable.from(cards.map(card => nvidiaService.setPowerLimit(card, 100))))
-        .mergeAll(2).toArray();
+        .mergeAll(4).toArray();
 
     if (minerSettings.initialClock != null) {
         const clockSetting = minerSettings.initialClock.toString();
         const observables = cards.map(card => nvidiaService.assignAttributeValue(card.index, "GPUMemoryTransferRateOffset", "gpu", clockSetting));
         returnObservable = returnObservable.flatMap(() => Observable.from(observables))
-            .mergeAll(2)
+            .mergeAll(4)
             .toArray();
     }
 
