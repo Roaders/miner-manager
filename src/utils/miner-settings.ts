@@ -25,7 +25,7 @@ export class MinerSettings {
 
         if (this._settingsValid) {
             this._startPort = startPortMaybe.value;
-            this._logFolder = logFolderMaybe.value;
+            this._logFolder = this.makePathAbsolute(logFolderMaybe.value);
             this._claymorePath = claymorePathMaybe.value;
         }
 
@@ -47,6 +47,15 @@ export class MinerSettings {
         this._initialClock = commandLineValues.initialClock;
         this._setup = commandLineValues.setup;
         this._applySettings = commandLineValues.applySettings;
+    }
+
+    private makePathAbsolute(p: string): string{
+
+        if(path.isAbsolute(p)){
+            return p;
+        }
+
+        return path.join(process.cwd(), p);
     }
 
     private _settingsValid: boolean;
@@ -134,7 +143,7 @@ export class MinerSettings {
     private _logFolder: string;
 
     public get logFolder(): string {
-        return path.join(process.cwd(), this._logFolder);
+        return this._logFolder;
     }
 
     private _query: boolean;

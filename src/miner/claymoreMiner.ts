@@ -34,6 +34,9 @@ export class ClaymoreMiner {
 
     constructor(private _card: INvidiaQuery, private _port: number, private _settings: MinerSettings) {
         const logPath = path.join(_settings.logFolder, `GPU${_card.index}_${Date.now()}.log`);
+
+        console.log(`Creating log file: ${logPath}`);
+
         this._logger = new winston.Logger({
             transports: [
                 new winston.transports.File({ filename: logPath })
@@ -119,6 +122,8 @@ export class ClaymoreMiner {
     private buildMinerParams() {
 
         const logPath = path.join(this._settings.logFolder, `Clay_GPU${this._card.index}_${Date.now()}.log`);
+
+        console.log(`Claymore log file: ${logPath}`);
 
         this._logger.info(`logPath: ${logPath}`);
 
