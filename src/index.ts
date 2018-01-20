@@ -65,6 +65,7 @@ if (minerSettings.identify != null) {
         () => console.log(`Monitor Configuration Complete. Please restart system.`)
     );
 } else if (minerSettings.applySettings) {
+    checkRoot();
 
     console.log(`Applying initial Settings...`);
 
@@ -72,6 +73,8 @@ if (minerSettings.identify != null) {
         .flatMap(initialSettings)
         .subscribe(() => console.log(`all settings applied`));
 } else {
+    checkRoot();
+    
     startMining();
 }
 
