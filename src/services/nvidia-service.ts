@@ -67,7 +67,7 @@ export class NvidiaService {
             .filter(event => event.event === "data")
             .map<childEvent, IChildDataEvent>(event => event as IChildDataEvent)
             .map(event => event.data)
-            .do(data => console.log(`Assignment result: ${data}`))
+            .do(data => console.log(`Assignment result for ${attribute}:${cardIndex}: ${data}`))
             .toArray();
     }
 
@@ -85,7 +85,8 @@ export class NvidiaService {
 
             const state = value == null ? "0" : "1";
             return this.assignAttributeValue(cardIndex, "GPUFanControlState", "gpu", state)
-                .flatMap(() => fanSpeed);
+                .flatMap(() => fanSpeed)
+                .do(() => console.log(`Setting fan speed for ${cardIndex} complete.`));
         });
     }
 
@@ -103,7 +104,8 @@ export class NvidiaService {
                 .toArray()
                 .flatMap(() => this.changeSmiSetting(["-i", card.index.toString(), "-pm", "1"]))
                 .toArray()
-                .flatMap(() => this.changeSmiSetting(["-i", card.index.toString(), "-pl", limit.toString()]));
+                .flatMap(() => this.changeSmiSetting(["-i", card.index.toString(), "-pl", limit.toString()]))
+                .do(() => console.log(`Setting power limit for ${card} complete.`));
         })
     }
 
@@ -149,7 +151,7 @@ export class NvidiaService {
             .map<childEvent, IChildDataEvent>(m => <any>m)
             .map(message => message.data)
             .filter(result => result != null)
-            .do(data => console.log(`Setup Monitors Result: ${data}`))
+            .do(data => console.log(data))
             .toArray();
     }
 
@@ -169,7 +171,8 @@ export class NvidiaService {
                 .map(message => message.data)
                 .filter(result => result != null)
                 .do(data => console.log(`Smi setting result: ${data}`))
-                .toArray();
+                .toArray()
+                .do(() => console.log(`Smi setting adjustment ${smiArguments} complete`));
         })
     }
 
@@ -191,7 +194,7 @@ export class NvidiaService {
 
     private parseQueryResult(input: IChildDataEvent, queryParams: (keyof INvidiaQuery)[]): INvidiaQuery | undefined {
 
-        console.log(`Nvidia-smi result: ${input.data}`);
+        console.log(input.data);
 
         const values = input.data.split(", ");
 
