@@ -34,10 +34,17 @@ export class NvidiaService {
             .do(params => params.push("-t", "-q", `[${device}:${cardIndex}]/${attribute}`))
             .value;
 
-        return Observable.defer(() => launchChild(() => spawn(this._settings.nividiaSettingsLaunchParams.path, args, this.spawnOptions)))
+        let startTime: number;
+
+        return Observable.defer(() => {
+                console.log(`Querying ${attribute} for card ${cardIndex}`);
+                startTime = Date.now();
+                return launchChild(() => spawn(this._settings.nividiaSettingsLaunchParams.path, args, this.spawnOptions))
+            })
             .filter(event => event.event === "data")
             .map<childEvent, IChildDataEvent>(event => event as IChildDataEvent)
-            .map(event => parseFloat(event.data));
+            .map(event => parseFloat(event.data))
+            .do(() => console.log(`Query of ${attribute} for card ${cardIndex} complete in ${formatDuration(Date.now() - startTime)}`));
     }
 
     public assignAttributeValue(cardIndex: number, attribute: SettingsAttribute, device: Device = "gpu", value: string): Observable<string[]> {
@@ -58,23 +65,28 @@ export class NvidiaService {
             .do(params => params.push("-a", `[${device}:${cardIndex}]/${attributeString}=${value}`))
             .value;
 
+        let startTime: number;
 
         return Observable.defer(() => {
             console.log(`GPU ${cardIndex}: Setting attribute: ${args}`);
+            startTime = Date.now();
 
             return launchChild(() => spawn(this._settings.nividiaSettingsLaunchParams.path, args, this.spawnOptions))
         })
             .filter(event => event.event === "data")
             .map<childEvent, IChildDataEvent>(event => event as IChildDataEvent)
             .map(event => event.data)
-            .do(data => console.log(`Assignment result for ${attribute}:${cardIndex}: ${data}`))
+            .do(data => console.log(`Assignment result for ${attribute}:${cardIndex}: ${data} complete in ${formatDuration(Date.now() - startTime)}`))
             .toArray();
     }
 
     public setFanSpeed(cardIndex: number, value?: number) {
 
+        let startTime: number;
+
         return Observable.defer(() => {
             let fanSpeed: Observable<string[]>
+            startTime = Date.now();
             if (value !== undefined) {
                 console.log(`Setting fan speed for ${cardIndex} to ${value}`);
                 fanSpeed = this.assignAttributeValue(cardIndex, "GPUTargetFanSpeed", "fan", value.toString());
@@ -86,7 +98,7 @@ export class NvidiaService {
             const state = value == null ? "0" : "1";
             return this.assignAttributeValue(cardIndex, "GPUFanControlState", "gpu", state)
                 .flatMap(() => fanSpeed)
-                .do(() => console.log(`Setting fan speed for ${cardIndex} complete.`));
+                .do(() => console.log(`Setting fan speed for ${cardIndex} complete in ${formatDuration(Date.now() - startTime)}.`));
         });
     }
 
@@ -105,7 +117,7 @@ export class NvidiaService {
                 .flatMap(() => this.changeSmiSetting(["-i", card.index.toString(), "-pm", "1"]))
                 .toArray()
                 .flatMap(() => this.changeSmiSetting(["-i", card.index.toString(), "-pl", limit.toString()]))
-                .do(() => console.log(`Setting power limit for ${card} complete.`));
+                .do(() => console.log(`Setting power limit for ${card.index} complete.`));
         })
     }
 
@@ -118,7 +130,7 @@ export class NvidiaService {
             .map(params => { params.unshift("index"); return params; })
             .defaultTo<(keyof INvidiaQuery)[]>([]);
 
-        const queryStart = Date.now();
+        let startTime: number;
 
         const processParams: string[] = Maybe.nullToMaybe(this._settings.nividiaSmiLaunchParams.params)
             .orElse([])
@@ -127,6 +139,7 @@ export class NvidiaService {
 
         return Observable.defer(() => {
             console.log(`Nvidia-smi query:`);
+            startTime = Date.now();
 
             return launchChild(() => spawn(this._settings.nividiaSmiLaunchParams.path, processParams))
         })
@@ -136,7 +149,7 @@ export class NvidiaService {
             .filter(result => result != null)
             .map<INvidiaQuery | undefined, INvidiaQuery>(result => result!)
             .toArray()
-            .do(() => console.log(`Query Complete in ${formatDuration(Date.now() - queryStart)}`));
+            .do(() => console.log(`Query Complete in ${formatDuration(Date.now() - startTime)}`));
     }
 
     public setupMonitors() {
@@ -162,8 +175,11 @@ export class NvidiaService {
             .do(params => params.push(...smiArguments))
             .defaultTo([]);
 
+        let startTime: number;
+
         return Observable.defer(() => {
             console.log(`Adjusting smi setting: ${smiArguments}`);
+            startTime = Date.now();
 
             return launchChild(() => spawn(this._settings.nividiaSmiLaunchParams.path, params))
                 .filter(message => message.event === "data")
@@ -172,7 +188,7 @@ export class NvidiaService {
                 .filter(result => result != null)
                 .do(data => console.log(`Smi setting result: ${data}`))
                 .toArray()
-                .do(() => console.log(`Smi setting adjustment ${smiArguments} complete`));
+                .do(() => console.log(`Smi setting adjustment ${smiArguments} complete in ${formatDuration(Date.now() - startTime)}`));
         })
     }
 
