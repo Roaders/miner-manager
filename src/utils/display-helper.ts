@@ -1,5 +1,5 @@
 
-import { HorizontalTable } from "cli-table2";
+import { HorizontalTable } from "cli-table3";
 import { IMinerStatus } from "../miner/claymoreMiner";
 import { Maybe, IMaybe } from "maybe-monad";
 import { INvidiaQuery } from "../services/nvidia-service";
@@ -7,7 +7,7 @@ import { IHashStats } from "../services/claymore-service"
 
 import formatDuration = require("format-duration");
 
-import * as Table from "cli-table2";
+import * as Table from "cli-table3";
 import { start } from "repl";
 import { stat } from "fs";
 
